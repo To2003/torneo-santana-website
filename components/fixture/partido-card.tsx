@@ -45,6 +45,7 @@ export function PartidoCard({ partido, equipoLocal, equipoVisitante, showResulta
                   src={equipoLocal.logo}
                   alt={`Escudo de ${equipoLocal.nombre}`}
                   className="h-full w-full object-cover"
+                  referrerPolicy="no-referrer"
                 />
               ) : (
                 equipoLocal.nombre.substring(0, 2).toUpperCase()
@@ -90,6 +91,7 @@ export function PartidoCard({ partido, equipoLocal, equipoVisitante, showResulta
                   src={equipoVisitante.logo}
                   alt={`Escudo de ${equipoVisitante.nombre}`}
                   className="h-full w-full object-cover"
+                  referrerPolicy="no-referrer"
                 />
               ) : (
                 equipoVisitante.nombre.substring(0, 2).toUpperCase()

@@ -60,7 +60,7 @@ export function ProximosPartidos({ partidos, equipos, className }: ProximosParti
                         style={{ backgroundColor: equipoLocal.colorPrimario }}
                       >
                         {localTieneLogo ? (
-                          <img src={equipoLocal.logo} alt={equipoLocal.nombre} className="h-full w-full object-cover" />
+                          <img src={equipoLocal.logo} alt={equipoLocal.nombre} className="h-full w-full object-cover" referrerPolicy="no-referrer" />
                         ) : (
                           equipoLocal.nombre.substring(0, 2).toUpperCase()
                         )}
@@ -77,7 +77,7 @@ export function ProximosPartidos({ partidos, equipos, className }: ProximosParti
                         style={{ backgroundColor: equipoVisitante.colorPrimario }}
                       >
                         {visitanteTieneLogo ? (
-                          <img src={equipoVisitante.logo} alt={equipoVisitante.nombre} className="h-full w-full object-cover" />
+                          <img src={equipoVisitante.logo} alt={equipoVisitante.nombre} className="h-full w-full object-cover" referrerPolicy="no-referrer" />
                         ) : (
                           equipoVisitante.nombre.substring(0, 2).toUpperCase()
                         )}

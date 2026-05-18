@@ -56,7 +56,7 @@ export default async function EquipoDetallePage({ params }: Props) {
           </Link>
           <div className="flex flex-col items-center gap-6 md:flex-row">
             <div className="flex h-32 w-32 shrink-0 items-center justify-center overflow-hidden rounded-full bg-white text-4xl font-bold shadow-xl" style={{ color: equipo.colorPrimario }}>
-              {tieneLogo ? <img src={equipo.logo} alt={`Escudo de ${equipo.nombre}`} className="h-full w-full object-cover" /> : equipo.nombre.substring(0, 2).toUpperCase()}
+              {tieneLogo ? <img src={equipo.logo} alt={`Escudo de ${equipo.nombre}`} className="h-full w-full object-cover" referrerPolicy="no-referrer" /> : equipo.nombre.substring(0, 2).toUpperCase()}
             </div>
             <div className="text-center md:text-left">
               <h1 className="text-4xl font-black uppercase tracking-tight text-white md:text-5xl">{equipo.nombre}</h1>
@@ -132,7 +132,7 @@ export default async function EquipoDetallePage({ params }: Props) {
                             style={{ backgroundColor: rival?.colorPrimario || '#ccc' }}
                           >
                             {rivalTieneLogo ? (
-                              <img src={rival.logo} alt={rival.nombre} className="h-full w-full object-cover" />
+                              <img src={rival.logo} alt={rival.nombre} className="h-full w-full object-cover" referrerPolicy="no-referrer" />
                             ) : (
                               rival?.nombre.substring(0, 2).toUpperCase()
                             )}

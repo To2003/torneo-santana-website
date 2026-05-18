@@ -19,7 +19,7 @@ export function EquipoCard({ equipo }: EquipoCardProps) {
       >
         <div className="flex h-20 w-20 items-center justify-center overflow-hidden rounded-full text-xs font-bold text-white shadow-sm" style={{ backgroundColor: equipo.colorPrimario }}>
           {equipo.logo && !equipo.logo.includes('default.png') ? (
-            <img src={equipo.logo} alt={equipo.nombre} className="h-full w-full object-cover" />
+            <img src={equipo.logo} alt={equipo.nombre} className="h-full w-full object-cover" referrerPolicy="no-referrer" />
           ) : (
             equipo.nombre.substring(0, 2).toUpperCase()
           )}
