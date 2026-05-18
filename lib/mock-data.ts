@@ -130,7 +130,7 @@ export const partidosMock: Partido[] = [
   { id: '1-4', fecha: 1, dia: 'Sabado 6 Abril', hora: '18:00', equipoLocal: '7', equipoVisitante: '8', cancha: 'Cancha 1', setsLocal: 2, setsVisitante: 1, jugado: true },
   { id: '1-5', fecha: 1, dia: 'Sabado 6 Abril', hora: '19:00', equipoLocal: '9', equipoVisitante: '10', cancha: 'Cancha 1', setsLocal: 1, setsVisitante: 2, jugado: true },
   { id: '1-6', fecha: 1, dia: 'Sabado 6 Abril', hora: '20:00', equipoLocal: '11', equipoVisitante: '12', cancha: 'Cancha 1', setsLocal: 2, setsVisitante: 0, jugado: true },
-  
+
   // Fecha 2
   { id: '2-1', fecha: 2, dia: 'Sabado 13 Abril', hora: '15:00', equipoLocal: '2', equipoVisitante: '3', cancha: 'Cancha 1', setsLocal: 1, setsVisitante: 2, jugado: true },
   { id: '2-2', fecha: 2, dia: 'Sabado 13 Abril', hora: '16:00', equipoLocal: '4', equipoVisitante: '5', cancha: 'Cancha 1', setsLocal: 2, setsVisitante: 0, jugado: true },
@@ -138,7 +138,7 @@ export const partidosMock: Partido[] = [
   { id: '2-4', fecha: 2, dia: 'Sabado 13 Abril', hora: '18:00', equipoLocal: '8', equipoVisitante: '9', cancha: 'Cancha 1', setsLocal: 0, setsVisitante: 2, jugado: true },
   { id: '2-5', fecha: 2, dia: 'Sabado 13 Abril', hora: '19:00', equipoLocal: '10', equipoVisitante: '11', cancha: 'Cancha 1', setsLocal: 2, setsVisitante: 1, jugado: true },
   { id: '2-6', fecha: 2, dia: 'Sabado 13 Abril', hora: '20:00', equipoLocal: '12', equipoVisitante: '13', cancha: 'Cancha 1', setsLocal: 1, setsVisitante: 2, jugado: true },
-  
+
   // Fecha 3
   { id: '3-1', fecha: 3, dia: 'Sabado 20 Abril', hora: '15:00', equipoLocal: '1', equipoVisitante: '4', cancha: 'Cancha 1', setsLocal: 2, setsVisitante: 1, jugado: true },
   { id: '3-2', fecha: 3, dia: 'Sabado 20 Abril', hora: '16:00', equipoLocal: '3', equipoVisitante: '6', cancha: 'Cancha 1', setsLocal: 2, setsVisitante: 0, jugado: true },
@@ -205,7 +205,7 @@ export const configuracionMock: ConfiguracionTorneo = {
     'Partidos al mejor de 3 sets',
     'Sets a 25 puntos (3er set a 15 puntos)',
     '2 puntos de diferencia para ganar el set',
-    'Se otorgan 3 puntos por victoria',
+    'Se otorgan 4 puntos por victoria',
     'En caso de empate en puntos, desempata diferencia de sets'
   ],
   ubicacion: 'Club Deportivo Santana - Av. San Martin 1234, Buenos Aires',

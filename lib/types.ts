@@ -30,12 +30,11 @@ export interface Posicion {
   equipo: Equipo
   posicion: number
   pj: number // Partidos jugados
-  g: number // Ganados
-  p: number // Perdidos
-  sf: number // Sets a favor
-  sc: number // Sets en contra
-  ds: number // Diferencia de sets
-  pts: number // Puntos
+  pg: number // Partidos ganados
+  pp: number // Partidos perdidos
+  g2: number // Bonus ganados en 2 sets
+  p3: number // Bonus perdidos en 3 sets
+  pts: number // Puntos totales
 }
 
 export interface ConfiguracionTorneo {

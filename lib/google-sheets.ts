@@ -1,212 +1,205 @@
+import Papa from 'papaparse'
 import type { Equipo, Partido, ConfiguracionTorneo } from './types'
 import { equiposMock, partidosMock, configuracionMock } from './mock-data'
 
-// Configuración de Google Sheets
-const SHEET_ID = process.env.GOOGLE_SHEETS_ID
-const API_KEY = process.env.GOOGLE_SHEETS_API_KEY
+// Usamos tu ID de planilla. Asegurate de que esté Pública (Cualquier usuario con el vínculo -> Lector)
+const SHEET_ID = process.env.GOOGLE_SHEETS_ID || '1uSkYMWMITS2kaRx_XRe4XgMx6HXb0YieFaFXgQH3iu8'
+const CACHE_REVALIDATE = 60 // 60 segundos de caché
 
-// Cache de 60 segundos para evitar muchas requests
-const CACHE_REVALIDATE = 60
-
-interface SheetResponse {
-  values: string[][]
-}
-
-// Función genérica para obtener datos de una hoja
+// Función para leer la hoja pública en formato CSV
 async function getSheetData(sheetName: string): Promise<string[][] | null> {
-  if (!SHEET_ID || !API_KEY) {
-    console.log('[v0] Google Sheets no configurado, usando datos mock')
-    return null
-  }
-
   try {
-    const url = `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/${encodeURIComponent(sheetName)}?key=${API_KEY}`
-    const res = await fetch(url, { 
-      next: { revalidate: CACHE_REVALIDATE }
-    })
+    const url = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(sheetName)}`
 
-    if (!res.ok) {
-      console.error('[v0] Error fetching sheet:', sheetName, res.status)
-      return null
-    }
+    const res = await fetch(url, { next: { revalidate: CACHE_REVALIDATE } })
+    const text = await res.text()
 
-    const data: SheetResponse = await res.json()
-    return data.values || []
+    // Si la hoja no existe, Google devuelve un HTML
+    if (text.includes('<html')) return null
+
+    // Parseamos el CSV
+    const result = Papa.parse(text, { header: false })
+    return result.data as string[][]
   } catch (error) {
-    console.error('[v0] Error fetching Google Sheets:', error)
+    console.error(`[v0] Error fetching Google Sheets (${sheetName}):`, error)
     return null
   }
 }
 
-// Obtener equipos desde Google Sheets o mock
+// En lib/google-sheets.ts
+
 export async function getEquipos(): Promise<Equipo[]> {
   const data = await getSheetData('Equipos')
-  
-  if (!data || data.length < 2) {
-    return equiposMock
-  }
 
-  // Saltar la fila de encabezados
+  if (!data || data.length < 2) return equiposMock
+
+  // Saltar la fila 1 (encabezados)
   const rows = data.slice(1)
-  
-  return rows.map((row, index) => ({
-    id: String(index + 1),
-    nombre: row[0] || '',
-    slug: (row[0] || '').toLowerCase().replace(/\s+/g, '-'),
-    logo: row[1] || `/equipos/default.png`,
-    colorPrimario: row[2] || '#1a5f7a',
-    jugadores: (row[3] || '').split(',').map(j => j.trim()).filter(Boolean),
-    instagram: row[4] || undefined,
-    whatsapp: row[5] || undefined
-  }))
+
+  // Colores por defecto por si el equipo no especifica uno en la Columna D
+  const coloresFallback = ['#1a5f7a', '#e63946', '#2a9d8f', '#f4a261', '#e76f51', '#264653']
+
+  return rows
+    .filter(row => row[0] && row[0] !== 'LIBRE') // Ignorar filas vacías
+    .map((row, index) => {
+      // Extraemos las nuevas columnas (si están vacías, usamos valores por defecto)
+      const nombre = row[0]
+      const urlEscudo = row[1] && row[1].trim() !== "" ? row[1].trim() : `/equipos/default.png`
+
+      // Separamos la lista de jugadores por coma y quitamos espacios extra
+      const jugadoresRaw = row[2] ? row[2].split(',') : []
+      const jugadores = jugadoresRaw.map(j => j.trim()).filter(j => j !== "")
+
+      // Usamos el color de la hoja si existe, sino usamos el fallback
+      const colorPrimario = row[3] && row[3].trim() !== "" ? row[3].trim() : coloresFallback[index % coloresFallback.length]
+
+      return {
+        id: String(index + 1),
+        nombre: nombre,
+        slug: nombre.toLowerCase().replace(/\s+/g, '-'),
+        logo: urlEscudo, // Ahora usa el link del Sheets!
+        colorPrimario: colorPrimario, // Ahora usa el color del Sheets!
+        jugadores: jugadores, // ¡Ahora el plantel tiene nombres!
+      }
+    })
 }
 
-// Obtener configuración del torneo
 export async function getConfiguracion(): Promise<ConfiguracionTorneo> {
-  const data = await getSheetData('Configuracion')
-  
-  if (!data || data.length < 2) {
-    return configuracionMock
-  }
+  return configuracionMock // Mantenemos el mock para la config por ahora
+}
 
-  // La configuración está en formato clave-valor en columnas A y B
-  const config: Record<string, string> = {}
-  data.slice(1).forEach(row => {
-    if (row[0] && row[1]) {
-      config[row[0].toLowerCase()] = row[1]
+export async function getPartidosFecha(numeroFecha: number, equipos: Equipo[]): Promise<Partido[]> {
+  const data = await getSheetData(`Fecha ${numeroFecha}`)
+  if (!data || data.length < 2) return []
+
+  const rows = data.slice(1)
+  const partidos: Partido[] = []
+
+  rows.forEach((row, index) => {
+    // Formato de 6 columnas: Horario | Local | Goles L | VS | Goles V | Visitante
+    if (row.length < 6) return
+
+    const horario = row[0]
+    const nombreLocal = row[1]
+    const resLocal = row[2]
+    const resVisitante = row[4]
+    const nombreVisitante = row[5]
+
+    if (!nombreLocal || !nombreVisitante || nombreLocal === "LIBRE" || nombreVisitante === "LIBRE" || nombreVisitante === "Queda") return
+
+    // Buscar IDs de equipos
+    const local = equipos.find(e => e.nombre === nombreLocal)
+    const visitante = equipos.find(e => e.nombre === nombreVisitante)
+
+    if (local && visitante) {
+      const jugado = resLocal !== "" && resLocal !== "-" && resVisitante !== "" && resVisitante !== "-"
+
+      partidos.push({
+        id: `${numeroFecha}-${index + 1}`,
+        fecha: numeroFecha,
+        dia: `Fecha ${numeroFecha}`,
+        hora: horario,
+        equipoLocal: local.id,
+        equipoVisitante: visitante.id,
+        cancha: 'Cancha 1',
+        setsLocal: jugado ? parseInt(resLocal) : undefined,
+        setsVisitante: jugado ? parseInt(resVisitante) : undefined,
+        jugado: jugado
+      })
     }
   })
 
-  return {
-    nombre: config['nombre'] || configuracionMock.nombre,
-    descripcion: config['descripcion'] || configuracionMock.descripcion,
-    reglas: (config['reglas'] || '').split('|').filter(Boolean),
-    ubicacion: config['ubicacion'] || configuracionMock.ubicacion,
-    googleMapsUrl: config['googlemapsurl'] || configuracionMock.googleMapsUrl,
-    fechaInicio: config['fechainicio'],
-    fechaFin: config['fechafin']
-  }
+  return partidos
 }
 
-// Obtener partidos de una fecha específica
-export async function getPartidosFecha(numeroFecha: number): Promise<Partido[]> {
-  const data = await getSheetData(`Fecha ${numeroFecha}`)
-  
-  if (!data || data.length < 2) {
-    // Devolver partidos mock de esa fecha
-    return partidosMock.filter(p => p.fecha === numeroFecha)
-  }
-
-  const rows = data.slice(1)
-  
-  return rows.map((row, index) => ({
-    id: `${numeroFecha}-${index + 1}`,
-    fecha: numeroFecha,
-    dia: row[0] || '',
-    hora: row[1] || '',
-    equipoLocal: row[2] || '',
-    equipoVisitante: row[3] || '',
-    cancha: row[4] || 'Cancha 1',
-    setsLocal: row[5] ? parseInt(row[5]) : undefined,
-    setsVisitante: row[6] ? parseInt(row[6]) : undefined,
-    jugado: Boolean(row[5] && row[6])
-  }))
-}
-
-// Obtener todos los partidos de todas las fechas
 export async function getTodosLosPartidos(): Promise<Partido[]> {
-  // Si no hay Google Sheets configurado, usar mock
-  if (!SHEET_ID || !API_KEY) {
-    return partidosMock
-  }
-
-  // Intentar cargar todas las fechas (máximo 20 fechas)
+  const equipos = await getEquipos()
   const partidos: Partido[] = []
-  
+
+  // Buscar hasta un máximo de 20 fechas
   for (let fecha = 1; fecha <= 20; fecha++) {
-    const partidosFecha = await getPartidosFecha(fecha)
-    if (partidosFecha.length === 0) break
+    const partidosFecha = await getPartidosFecha(fecha, equipos)
+    if (partidosFecha.length === 0) break // Si no encuentra la fecha, termina el loop
     partidos.push(...partidosFecha)
   }
 
-  return partidos.length > 0 ? partidos : partidosMock
+  return partidos
 }
 
-// Obtener próximos partidos (no jugados)
 export async function getProximosPartidos(limit: number = 6): Promise<Partido[]> {
   const partidos = await getTodosLosPartidos()
-  return partidos
-    .filter(p => !p.jugado)
-    .slice(0, limit)
+  return partidos.filter(p => !p.jugado).slice(0, limit)
 }
 
-// Obtener resultados (partidos jugados)
 export async function getResultados(): Promise<Partido[]> {
   const partidos = await getTodosLosPartidos()
   return partidos.filter(p => p.jugado)
 }
 
-// Calcular tabla de posiciones
 export async function getTablaPosiciones() {
   const equipos = await getEquipos()
   const partidos = await getTodosLosPartidos()
-  
+
   const posiciones = equipos.map(equipo => {
-    const partidosEquipo = partidos.filter(p => 
+    // Filtrar los partidos que este equipo ya jugó
+    const partidosEquipo = partidos.filter(p =>
       (p.equipoLocal === equipo.id || p.equipoVisitante === equipo.id) && p.jugado
     )
-    
-    let ganados = 0
-    let perdidos = 0
-    let setsF = 0
-    let setsC = 0
-    
+
+    let pg = 0
+    let pp = 0
+    let g2 = 0
+    let p3 = 0
+
     partidosEquipo.forEach(p => {
       const esLocal = p.equipoLocal === equipo.id
       const misSets = esLocal ? (p.setsLocal || 0) : (p.setsVisitante || 0)
       const susSets = esLocal ? (p.setsVisitante || 0) : (p.setsLocal || 0)
-      
-      setsF += misSets
-      setsC += susSets
-      
-      if (misSets > susSets) ganados++
-      else perdidos++
+
+      if (misSets > susSets) {
+        pg++ // Ganó el partido
+        if (susSets === 0) g2++ // Ganó en 2 sets directos (dejó al rival en 0)
+      } else if (susSets > misSets) {
+        pp++ // Perdió el partido
+        if (misSets === 1) p3++ // Perdió en 3 sets (logró arrancar 1 set)
+      }
     })
-    
+
+    // Cálculo matemático de los puntos del reglamento
+    const pts = (pg * 4) + (g2 * 2) + (pp * 1) + (p3 * 1)
+
     return {
       equipo,
       posicion: 0,
       pj: partidosEquipo.length,
-      g: ganados,
-      p: perdidos,
-      sf: setsF,
-      sc: setsC,
-      ds: setsF - setsC,
-      pts: ganados * 3
+      pg,
+      pp,
+      g2,
+      p3,
+      pts
     }
   })
-  
-  // Ordenar por puntos, luego por diferencia de sets
+
+  // Ordenar por puntos, luego por partidos ganados, luego por bonus G2
   posiciones.sort((a, b) => {
     if (b.pts !== a.pts) return b.pts - a.pts
-    return b.ds - a.ds
+    if (b.pg !== a.pg) return b.pg - a.pg
+    return b.g2 - a.g2
   })
-  
-  // Asignar posiciones
+
+  // Asignar los números de posición (1º, 2º, 3º...)
   posiciones.forEach((pos, index) => {
     pos.posicion = index + 1
   })
-  
+
   return posiciones
 }
 
-// Obtener un equipo por slug
 export async function getEquipoBySlug(slug: string): Promise<Equipo | null> {
   const equipos = await getEquipos()
   return equipos.find(e => e.slug === slug) || null
 }
 
-// Obtener partidos de un equipo específico
 export async function getPartidosEquipo(equipoId: string): Promise<Partido[]> {
   const partidos = await getTodosLosPartidos()
   return partidos.filter(p => p.equipoLocal === equipoId || p.equipoVisitante === equipoId)

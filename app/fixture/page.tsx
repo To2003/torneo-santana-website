@@ -41,15 +41,17 @@ export default async function FixturePage() {
         <div className="relative mx-auto max-w-7xl space-y-8 px-4">
           {fechas.map((numeroFecha) => {
             const { partidos: partidosFecha, dia } = partidosPorFecha[numeroFecha]
-            
+
             return (
-              <FechaSection 
+              <FechaSection
                 key={numeroFecha}
                 fecha={numeroFecha}
                 dia={dia}
                 partidos={partidosFecha}
                 equipos={equipos}
-                showResultados={false}
+                // ¡AQUÍ ESTÁ EL CAMBIO CLAVE!
+                // Pasamos a true para que el componente interno dibuje los números
+                showResultados={true}
               />
             )
           })}

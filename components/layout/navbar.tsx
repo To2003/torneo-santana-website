@@ -9,8 +9,7 @@ import { Menu, X } from 'lucide-react'
 const navItems = [
   { href: '/', label: 'Inicio' },
   { href: '/equipos', label: 'Equipos' },
-  { href: '/fixture', label: 'Fixture' },
-  { href: '/resultados', label: 'Resultados' },
+  { href: '/fixture', label: 'Fixture' }
 ]
 
 export function Navbar() {
@@ -20,7 +19,7 @@ export function Navbar() {
   return (
     <header className="sticky top-0 z-50 w-full bg-gradient-to-b from-[#1a3a5c] to-[#0d2340] shadow-lg">
       {/* Volleyball net pattern overlay */}
-      <div 
+      <div
         className="absolute inset-0 opacity-10"
         style={{
           backgroundImage: `
@@ -30,20 +29,20 @@ export function Navbar() {
           backgroundSize: '20px 20px'
         }}
       />
-      
+
       <div className="relative mx-auto flex max-w-7xl items-center justify-between px-4 py-3">
         {/* Logo */}
         <Link href="/" className="flex items-center gap-3">
           <div className="relative flex h-14 w-14 items-center justify-center">
             {/* Volleyball icon */}
             <svg viewBox="0 0 100 100" className="h-12 w-12">
-              <circle cx="50" cy="50" r="45" fill="#FFD54F" stroke="#F9A825" strokeWidth="3"/>
-              <path d="M50 5 Q50 50 95 50" fill="none" stroke="#FFF" strokeWidth="2" opacity="0.6"/>
-              <path d="M50 5 Q50 50 5 50" fill="none" stroke="#FFF" strokeWidth="2" opacity="0.6"/>
-              <path d="M5 50 Q50 50 50 95" fill="none" stroke="#FFF" strokeWidth="2" opacity="0.6"/>
-              <path d="M95 50 Q50 50 50 95" fill="none" stroke="#FFF" strokeWidth="2" opacity="0.6"/>
-              <path d="M20 20 Q50 50 80 20" fill="none" stroke="#FFF" strokeWidth="2" opacity="0.6"/>
-              <path d="M20 80 Q50 50 80 80" fill="none" stroke="#FFF" strokeWidth="2" opacity="0.6"/>
+              <circle cx="50" cy="50" r="45" fill="#FFD54F" stroke="#F9A825" strokeWidth="3" />
+              <path d="M50 5 Q50 50 95 50" fill="none" stroke="#FFF" strokeWidth="2" opacity="0.6" />
+              <path d="M50 5 Q50 50 5 50" fill="none" stroke="#FFF" strokeWidth="2" opacity="0.6" />
+              <path d="M5 50 Q50 50 50 95" fill="none" stroke="#FFF" strokeWidth="2" opacity="0.6" />
+              <path d="M95 50 Q50 50 50 95" fill="none" stroke="#FFF" strokeWidth="2" opacity="0.6" />
+              <path d="M20 20 Q50 50 80 20" fill="none" stroke="#FFF" strokeWidth="2" opacity="0.6" />
+              <path d="M20 80 Q50 50 80 80" fill="none" stroke="#FFF" strokeWidth="2" opacity="0.6" />
             </svg>
           </div>
           <div className="flex flex-col">
@@ -55,9 +54,9 @@ export function Navbar() {
         {/* Desktop Navigation */}
         <nav className="hidden md:flex md:items-center md:gap-1">
           {navItems.map((item) => {
-            const isActive = pathname === item.href || 
+            const isActive = pathname === item.href ||
               (item.href !== '/' && pathname.startsWith(item.href))
-            
+
             return (
               <Link
                 key={item.href}
@@ -90,9 +89,9 @@ export function Navbar() {
         <nav className="relative border-t border-white/10 md:hidden">
           <div className="flex flex-col px-4 py-2">
             {navItems.map((item) => {
-              const isActive = pathname === item.href || 
+              const isActive = pathname === item.href ||
                 (item.href !== '/' && pathname.startsWith(item.href))
-              
+
               return (
                 <Link
                   key={item.href}

@@ -2,11 +2,11 @@ import { Hero } from '@/components/home/hero'
 import { TablaPosiciones } from '@/components/home/tabla-posiciones'
 import { ProximosPartidos } from '@/components/home/proximos-partidos'
 import { InfoTorneo } from '@/components/home/info-torneo'
-import { 
-  getConfiguracion, 
-  getTablaPosiciones, 
+import {
+  getConfiguracion,
+  getTablaPosiciones,
   getProximosPartidos,
-  getEquipos 
+  getEquipos
 } from '@/lib/google-sheets'
 
 export default async function HomePage() {
@@ -21,7 +21,7 @@ export default async function HomePage() {
     <div className="min-h-screen">
       {/* Hero Section */}
       <Hero config={config} />
-      
+
       {/* Main Content */}
       <section className="bg-court py-8">
         <div className="relative mx-auto max-w-7xl px-4">
@@ -30,18 +30,18 @@ export default async function HomePage() {
             <div className="lg:col-span-2">
               <TablaPosiciones posiciones={posiciones} />
             </div>
-            
+
             {/* Sidebar - Proximos Partidos */}
             <div className="lg:col-span-1">
-              <ProximosPartidos 
-                partidos={proximosPartidos} 
+              <ProximosPartidos
+                partidos={proximosPartidos}
                 equipos={equipos}
               />
             </div>
           </div>
         </div>
       </section>
-      
+
       {/* Info del Torneo */}
       <InfoTorneo config={config} />
     </div>
