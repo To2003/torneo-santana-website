@@ -49,9 +49,8 @@ export default async function FixturePage() {
                 dia={dia}
                 partidos={partidosFecha}
                 equipos={equipos}
-                // ¡AQUÍ ESTÁ EL CAMBIO CLAVE!
-                // Pasamos a true para que el componente interno dibuje los números
                 showResultados={true}
+
               />
             )
           })}

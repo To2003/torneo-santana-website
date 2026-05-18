@@ -6,6 +6,13 @@ interface InfoTorneoProps {
 }
 
 export function InfoTorneo({ config }: InfoTorneoProps) {
+  // Dirección y enlaces exactos para Maestro Santana 310, San Isidro
+  const direccionReal = "Maestro Santana 310, B1642 BQH, Provincia de Buenos Aires";
+  const googleMapsUrlReal = "https://maps.google.com/?q=Maestro+Santana+310,+B1642+BQH,+Provincia+de+Buenos+Aires";
+
+  // URL de Embed generada específicamente para esa dirección exacta
+  const iframeSrcReal = "https://maps.google.com/maps?q=Maestro%20Santana%20310%20San%20Isidro&t=&z=15&ie=UTF8&iwloc=&output=embed";
+
   return (
     <section className="py-12">
       <div className="mx-auto max-w-7xl px-4">
@@ -29,34 +36,43 @@ export function InfoTorneo({ config }: InfoTorneoProps) {
           </div>
 
           {/* Ubicación */}
-          <div className="rounded-xl border border-border bg-card p-6 shadow-lg">
-            <h3 className="mb-4 flex items-center gap-2 text-xl font-bold text-torneo-primary">
-              <MapPin className="h-6 w-6" />
-              Ubicacion
-            </h3>
-            <p className="mb-4 text-foreground/80">{config.ubicacion}</p>
-            
-            {/* Map placeholder */}
-            <div className="overflow-hidden rounded-lg border border-border bg-muted">
-              <div className="aspect-video bg-gradient-to-br from-torneo-primary/20 to-torneo-primary/5 flex items-center justify-center">
-                <div className="text-center">
-                  <MapPin className="mx-auto h-12 w-12 text-torneo-primary/50" />
-                  <p className="mt-2 text-sm text-muted-foreground">Mapa del club</p>
-                </div>
+          <div className="rounded-xl border border-border bg-card p-6 shadow-lg flex flex-col justify-between">
+            <div>
+              <h3 className="mb-4 flex items-center gap-2 text-xl font-bold text-torneo-primary">
+                <MapPin className="h-6 w-6" />
+                Ubicación
+              </h3>
+              {/* Prioriza la dirección exacta que pasaste */}
+              <p className="mb-4 text-foreground/80 font-semibold text-sm">
+                {config.ubicacion && config.ubicacion.length > 5 ? config.ubicacion : direccionReal}
+              </p>
+
+              {/* Mapa Interactivo apuntando a Maestro Santana 310 */}
+              <div className="overflow-hidden rounded-lg border border-border shadow-inner bg-slate-100 relative group">
+                <iframe
+                  src={iframeSrcReal}
+                  width="100%"
+                  height="220"
+                  style={{ border: 0 }}
+                  allowFullScreen={true}
+                  loading="lazy"
+                  referrerPolicy="no-referrer-when-downgrade"
+                  className="w-full grayscale-[10%] transition-all group-hover:grayscale-0"
+                />
               </div>
             </div>
-            
-            {config.googleMapsUrl && (
-              <a 
-                href={config.googleMapsUrl}
+
+            <div className="mt-4 pt-2 border-t border-slate-100 flex items-center">
+              <a
+                href={config.googleMapsUrl && config.googleMapsUrl.includes('http') ? config.googleMapsUrl : googleMapsUrlReal}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="mt-4 inline-flex items-center gap-2 text-sm font-medium text-torneo-primary hover:underline"
+                className="inline-flex items-center gap-2 text-sm font-bold text-[#1f4e78] hover:text-[#1f4e78]/80 hover:underline transition-colors bg-slate-50 px-4 py-2.5 rounded-lg border border-slate-200/60 shadow-sm"
               >
                 <ExternalLink className="h-4 w-4" />
-                Abrir en Google Maps
+                Abrir ubicación en Google Maps
               </a>
-            )}
+            </div>
           </div>
         </div>
       </div>
