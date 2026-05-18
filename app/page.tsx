@@ -1,11 +1,11 @@
 import { Hero } from '@/components/home/hero'
 import { TablaPosiciones } from '@/components/home/tabla-posiciones'
-import { ProximosPartidos } from '@/components/home/proximos-partidos'
+import { UltimosMVPs } from '@/components/home/ultimos-mvps'
 import { InfoTorneo } from '@/components/home/info-torneo'
 import {
   getConfiguracion,
   getTablaPosiciones,
-  getProximosPartidos,
+  getUltimosMVPs,
   getEquipos
 } from '@/lib/google-sheets'
 
@@ -28,10 +28,10 @@ const configRespaldo = {
 }
 
 export default async function HomePage() {
-  const [configSheet, posiciones, proximosPartidos, equipos] = await Promise.all([
+  const [configSheet, posiciones, ultimosMVPs, equipos] = await Promise.all([
     getConfiguracion(),
     getTablaPosiciones(),
-    getProximosPartidos(6),
+    getUltimosMVPs(),
     getEquipos()
   ])
 
@@ -63,10 +63,10 @@ export default async function HomePage() {
               <TablaPosiciones posiciones={posiciones} />
             </div>
 
-            {/* Sidebar - Proximos Partidos */}
+            {/* Sidebar - Ultimos MVPs */}
             <div className="min-w-0 lg:col-span-1">
-              <ProximosPartidos
-                partidos={proximosPartidos}
+              <UltimosMVPs
+                partidos={ultimosMVPs}
                 equipos={equipos}
               />
             </div>

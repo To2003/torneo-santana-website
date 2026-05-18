@@ -24,6 +24,7 @@ export interface Partido {
   puntosLocal?: number[]
   puntosVisitante?: number[]
   jugado: boolean
+  mvp?: string
 }
 
 export interface Posicion {

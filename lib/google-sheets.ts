@@ -76,7 +76,7 @@ export async function getPartidosFecha(numeroFecha: number, equipos: Equipo[]): 
   const partidos: Partido[] = []
 
   rows.forEach((row, index) => {
-    // Formato de 6 columnas: Horario | Local | Goles L | VS | Goles V | Visitante
+    // Formato de 7 columnas: Horario | Local | Goles L | VS | Goles V | Visitante | MVP (Opcional)
     if (row.length < 6) return
 
     const horario = row[0]
@@ -84,6 +84,8 @@ export async function getPartidosFecha(numeroFecha: number, equipos: Equipo[]): 
     const resLocal = row[2]
     const resVisitante = row[4]
     const nombreVisitante = row[5]
+    const mvpRaw = row[6]
+    const mvp = mvpRaw && mvpRaw.trim() !== "" ? mvpRaw.trim() : undefined
 
     if (!nombreLocal || !nombreVisitante || nombreLocal === "LIBRE" || nombreVisitante === "LIBRE" || nombreVisitante === "Queda") return
 
@@ -104,7 +106,8 @@ export async function getPartidosFecha(numeroFecha: number, equipos: Equipo[]): 
         cancha: 'Cancha 1',
         setsLocal: jugado ? parseInt(resLocal) : undefined,
         setsVisitante: jugado ? parseInt(resVisitante) : undefined,
-        jugado: jugado
+        jugado: jugado,
+        mvp: jugado ? mvp : undefined
       })
     }
   })
@@ -132,6 +135,19 @@ export async function getProximosPartidos(limit: number = 6): Promise<Partido[]>
 export async function getResultados(): Promise<Partido[]> {
   const partidos = await getTodosLosPartidos()
   return partidos.filter(p => p.jugado)
+}
+
+export async function getUltimosMVPs(): Promise<Partido[]> {
+  const partidos = await getResultados()
+  const partidosConMvp = partidos.filter(p => p.mvp)
+  
+  if (partidosConMvp.length === 0) return []
+  
+  // Encontrar el número de fecha más alto que tenga al menos un MVP
+  const ultimaFechaConMvp = Math.max(...partidosConMvp.map(p => p.fecha))
+  
+  // Filtrar y devolver solo los MVPs de esa fecha específica
+  return partidosConMvp.filter(p => p.fecha === ultimaFechaConMvp)
 }
 
 export async function getTablaPosiciones() {
