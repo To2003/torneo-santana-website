@@ -9,13 +9,45 @@ import {
   getEquipos
 } from '@/lib/google-sheets'
 
+// Datos de respaldo oficiales por si el Sheets falla, viene vacío o está desactualizado
+const configRespaldo = {
+  nombre: 'Torneo Santana',
+  descripcion: 'El torneo de voley mixto mas emocionante de la zona. Competencia amateur los días sábados.',
+  reglas: [
+    'Partido Ganado: 4 puntos',
+    'Bonus por partido ganado en 2 sets (2-0): 2 puntos',
+    'Partido perdido: 1 punto',
+    'Bonus por partido perdido en 3 sets (1-2): 1 punto',
+    'Torneo de voley MIXTO: mínimo 3 mujeres en cancha en todo momento',
+    'Partidos al mejor de 3 sets (Sets a 25 puntos, 3er set a 15 puntos)'
+  ],
+  ubicacion: 'Maestro Santana 310, B1642 BQH, Provincia de Buenos Aires',
+  googleMapsUrl: 'https://maps.google.com/?q=Maestro+Santana+310,+B1642+BQH,+Provincia+de+Buenos+Aires',
+  fechaInicio: 'Clausura 2026',
+  fechaFin: 'A confirmar'
+}
+
 export default async function HomePage() {
-  const [config, posiciones, proximosPartidos, equipos] = await Promise.all([
+  const [configSheet, posiciones, proximosPartidos, equipos] = await Promise.all([
     getConfiguracion(),
     getTablaPosiciones(),
     getProximosPartidos(6),
     getEquipos()
   ])
+
+  // LÓGICA DE SEGURIDAD: Si el Sheets viene vacío o sin reglas, inyectamos el respaldo oficial
+  const config = {
+    nombre: configSheet?.nombre || configRespaldo.nombre,
+    descripcion: configSheet?.descripcion || configRespaldo.descripcion,
+    ubicacion: configSheet?.ubicacion || configRespaldo.ubicacion,
+    googleMapsUrl: configSheet?.googleMapsUrl || configRespaldo.googleMapsUrl,
+    fechaInicio: configSheet?.fechaInicio || configRespaldo.fechaInicio,
+    fechaFin: configSheet?.fechaFin || configRespaldo.fechaFin,
+    // Si la lista de reglas del excel está vacía, mete las 6 reglas oficiales automáticamente
+    reglas: configSheet?.reglas && configSheet.reglas.length > 0
+      ? configSheet.reglas
+      : configRespaldo.reglas
+  }
 
   return (
     <div className="min-h-screen">
