@@ -59,12 +59,12 @@ export default async function HomePage() {
         <div className="relative mx-auto max-w-7xl px-4">
           <div className="grid gap-6 lg:grid-cols-3">
             {/* Tabla de Posiciones - 2 columnas en desktop */}
-            <div className="lg:col-span-2">
+            <div className="min-w-0 lg:col-span-2">
               <TablaPosiciones posiciones={posiciones} />
             </div>
 
             {/* Sidebar - Proximos Partidos */}
-            <div className="lg:col-span-1">
+            <div className="min-w-0 lg:col-span-1">
               <ProximosPartidos
                 partidos={proximosPartidos}
                 equipos={equipos}

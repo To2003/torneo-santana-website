@@ -114,16 +114,14 @@ export async function getPartidosFecha(numeroFecha: number, equipos: Equipo[]): 
 
 export async function getTodosLosPartidos(): Promise<Partido[]> {
   const equipos = await getEquipos()
-  const partidos: Partido[] = []
-
-  // Buscar hasta un máximo de 20 fechas
-  for (let fecha = 1; fecha <= 20; fecha++) {
-    const partidosFecha = await getPartidosFecha(fecha, equipos)
-    if (partidosFecha.length === 0) break // Si no encuentra la fecha, termina el loop
-    partidos.push(...partidosFecha)
-  }
-
-  return partidos
+  
+  // Buscar hasta un máximo de 20 fechas EN PARALELO para mejorar el rendimiento
+  // Esto evita hacer llamadas en cascada que bloquean la carga de la página
+  const promesas = Array.from({ length: 20 }, (_, i) => getPartidosFecha(i + 1, equipos))
+  const resultados = await Promise.all(promesas)
+  
+  // Aplanar los resultados y devolver
+  return resultados.flat()
 }
 
 export async function getProximosPartidos(limit: number = 6): Promise<Partido[]> {

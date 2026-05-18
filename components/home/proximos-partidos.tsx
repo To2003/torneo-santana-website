@@ -40,6 +40,9 @@ export function ProximosPartidos({ partidos, equipos, className }: ProximosParti
               
               if (!equipoLocal || !equipoVisitante) return null
               
+              const localTieneLogo = equipoLocal.logo && !equipoLocal.logo.includes('default.png')
+              const visitanteTieneLogo = equipoVisitante.logo && !equipoVisitante.logo.includes('default.png')
+              
               return (
                 <div key={partido.id} className="px-4 py-3">
                   {/* Fecha badge */}
@@ -53,10 +56,14 @@ export function ProximosPartidos({ partidos, equipos, className }: ProximosParti
                   <div className="flex items-center justify-center gap-2 text-sm">
                     <div className="flex items-center gap-2">
                       <div 
-                        className="flex h-6 w-6 items-center justify-center rounded-full text-[10px] font-bold text-white"
+                        className="flex h-7 w-7 shrink-0 items-center justify-center overflow-hidden rounded-full border border-slate-200 text-[10px] font-bold text-white shadow-sm"
                         style={{ backgroundColor: equipoLocal.colorPrimario }}
                       >
-                        {equipoLocal.nombre.substring(0, 2).toUpperCase()}
+                        {localTieneLogo ? (
+                          <img src={equipoLocal.logo} alt={equipoLocal.nombre} className="h-full w-full object-cover" />
+                        ) : (
+                          equipoLocal.nombre.substring(0, 2).toUpperCase()
+                        )}
                       </div>
                       <span className="font-semibold">{equipoLocal.nombre.split(' ')[0]}</span>
                     </div>
@@ -66,10 +73,14 @@ export function ProximosPartidos({ partidos, equipos, className }: ProximosParti
                     <div className="flex items-center gap-2">
                       <span className="font-semibold">{equipoVisitante.nombre.split(' ')[0]}</span>
                       <div 
-                        className="flex h-6 w-6 items-center justify-center rounded-full text-[10px] font-bold text-white"
+                        className="flex h-7 w-7 shrink-0 items-center justify-center overflow-hidden rounded-full border border-slate-200 text-[10px] font-bold text-white shadow-sm"
                         style={{ backgroundColor: equipoVisitante.colorPrimario }}
                       >
-                        {equipoVisitante.nombre.substring(0, 2).toUpperCase()}
+                        {visitanteTieneLogo ? (
+                          <img src={equipoVisitante.logo} alt={equipoVisitante.nombre} className="h-full w-full object-cover" />
+                        ) : (
+                          equipoVisitante.nombre.substring(0, 2).toUpperCase()
+                        )}
                       </div>
                     </div>
                   </div>

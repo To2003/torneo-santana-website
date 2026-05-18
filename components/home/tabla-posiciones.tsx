@@ -20,10 +20,10 @@ export function TablaPosiciones({ posiciones, className }: TablaPosicionesProps)
               <th className="px-2 py-3 text-center font-semibold text-[#1f4e78]">POS</th>
               <th className="px-2 py-3 text-left font-semibold text-[#1f4e78]">EQUIPO</th>
               <th className="px-2 py-3 text-center font-semibold text-[#1f4e78]">PJ</th>
-              <th className="px-2 py-3 text-center font-semibold text-[#1f4e78]">PG</th>
-              <th className="px-2 py-3 text-center font-semibold text-[#1f4e78]">PP</th>
-              <th className="px-2 py-3 text-center font-semibold text-[#1f4e78]">G2</th>
-              <th className="px-2 py-3 text-center font-semibold text-[#1f4e78]">P3</th>
+              <th className="hidden sm:table-cell px-2 py-3 text-center font-semibold text-[#1f4e78]">PG</th>
+              <th className="hidden sm:table-cell px-2 py-3 text-center font-semibold text-[#1f4e78]">PP</th>
+              <th className="hidden md:table-cell px-2 py-3 text-center font-semibold text-[#1f4e78]">G2</th>
+              <th className="hidden md:table-cell px-2 py-3 text-center font-semibold text-[#1f4e78]">P3</th>
               <th className="px-2 py-3 text-center font-bold text-[#1f4e78]">PTS</th>
             </tr>
           </thead>
@@ -50,15 +50,15 @@ export function TablaPosiciones({ posiciones, className }: TablaPosicionesProps)
                           pos.equipo.nombre.substring(0, 2).toUpperCase()
                         )}
                       </div>
-                      <span className="font-bold text-slate-700 whitespace-nowrap">{pos.equipo.nombre}</span>
+                      <span className="max-w-[120px] sm:max-w-none truncate font-bold text-slate-700">{pos.equipo.nombre}</span>
                     </div>
                   </td>
 
                   <td className="px-2 py-3 text-center font-medium">{pos.pj}</td>
-                  <td className="px-2 py-3 text-center font-bold text-green-600">{pos.pg}</td>
-                  <td className="px-2 py-3 text-center font-medium text-red-500">{pos.pp}</td>
-                  <td className="px-2 py-3 text-center font-semibold text-blue-600">{pos.g2}</td>
-                  <td className="px-2 py-3 text-center font-medium text-orange-500">{pos.p3}</td>
+                  <td className="hidden sm:table-cell px-2 py-3 text-center font-bold text-green-600">{pos.pg}</td>
+                  <td className="hidden sm:table-cell px-2 py-3 text-center font-medium text-red-500">{pos.pp}</td>
+                  <td className="hidden md:table-cell px-2 py-3 text-center font-semibold text-blue-600">{pos.g2}</td>
+                  <td className="hidden md:table-cell px-2 py-3 text-center font-medium text-orange-500">{pos.p3}</td>
                   <td className="px-2 py-3 text-center">
                     <span className="inline-flex min-w-[3rem] items-center justify-center rounded-full bg-[#1f4e78] px-2 py-1 text-sm font-bold text-white shadow-sm">
                       {pos.pts}
