@@ -16,6 +16,12 @@ export function Navbar() {
   const pathname = usePathname()
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
 
+  // Función compartida para avisar que se viene la fase final
+  const manejarClickPlayoffs = () => {
+    setMobileMenuOpen(false) // Cierra el menú móvil si estaba abierto
+    alert('🏆 ¡Próximamente! La fase de Playoffs / Playout se habilitará al término de la etapa regular.')
+  }
+
   return (
     <header className="sticky top-0 z-50 w-full bg-gradient-to-b from-[#1a3a5c] to-[#0d2340] shadow-lg">
       {/* Volleyball net pattern overlay */}
@@ -72,6 +78,14 @@ export function Navbar() {
               </Link>
             )
           })}
+
+          {/* NUEVO BOTÓN PARA ESCRITORIO */}
+          <button
+            onClick={manejarClickPlayoffs}
+            className="rounded-md px-4 py-2 text-sm font-bold uppercase tracking-wider text-amber-400 transition-all hover:text-amber-300 hover:scale-105 cursor-pointer ml-1"
+          >
+            Playoffs ⚡
+          </button>
         </nav>
 
         {/* Mobile Menu Button */}
@@ -87,7 +101,7 @@ export function Navbar() {
       {/* Mobile Navigation */}
       {mobileMenuOpen && (
         <nav className="relative border-t border-white/10 md:hidden">
-          <div className="flex flex-col px-4 py-2">
+          <div className="flex flex-col px-4 py-2 space-y-1">
             {navItems.map((item) => {
               const isActive = pathname === item.href ||
                 (item.href !== '/' && pathname.startsWith(item.href))
@@ -108,6 +122,14 @@ export function Navbar() {
                 </Link>
               )
             })}
+
+            {/* NUEVO BOTÓN PARA MENÚ MÓVIL */}
+            <button
+              onClick={manejarClickPlayoffs}
+              className="flex w-full rounded-md px-4 py-3 text-sm font-bold uppercase tracking-wider text-amber-400 hover:bg-white/5 transition-colors cursor-pointer text-left"
+            >
+              Playoffs ⚡
+            </button>
           </div>
         </nav>
       )}
