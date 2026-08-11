@@ -35,16 +35,7 @@ export function Navbar() {
         {/* Logo */}
         <Link href="/" className="flex items-center gap-3">
           <div className="relative flex h-14 w-14 items-center justify-center">
-            {/* Volleyball icon */}
-            <svg viewBox="0 0 100 100" className="h-12 w-12">
-              <circle cx="50" cy="50" r="45" fill="#FFD54F" stroke="#F9A825" strokeWidth="3" />
-              <path d="M50 5 Q50 50 95 50" fill="none" stroke="#FFF" strokeWidth="2" opacity="0.6" />
-              <path d="M50 5 Q50 50 5 50" fill="none" stroke="#FFF" strokeWidth="2" opacity="0.6" />
-              <path d="M5 50 Q50 50 50 95" fill="none" stroke="#FFF" strokeWidth="2" opacity="0.6" />
-              <path d="M95 50 Q50 50 50 95" fill="none" stroke="#FFF" strokeWidth="2" opacity="0.6" />
-              <path d="M20 20 Q50 50 80 20" fill="none" stroke="#FFF" strokeWidth="2" opacity="0.6" />
-              <path d="M20 80 Q50 50 80 80" fill="none" stroke="#FFF" strokeWidth="2" opacity="0.6" />
-            </svg>
+            <img src="/logo-torneo.png" alt="Torneo Santana" className="h-12 w-12 rounded-full" />
           </div>
           <div className="flex flex-col">
             <span className="text-xl font-bold uppercase tracking-wider text-white">Torneo</span>

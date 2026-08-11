@@ -11,7 +11,13 @@
       "Bash(curl -s localhost:3000/fixture)",
       "Bash(curl -s \"localhost:3000/fixture\")",
       "Bash(curl -s -o /tmp/home.html -w \"%{http_code}\\\\n\" localhost:3000/)",
-      "Read(//tmp/**)"
+      "Read(//tmp/**)",
+      "Bash(find /home/toto/Documentos/CODE/torneo-santana-website -newer /home/toto/Documentos/CODE/torneo-santana-website/package.json -type f \\\\\\( -iname \"*.png\" -o -iname \"*.jpg\" -o -iname \"*.jpeg\" -o -iname \"*.svg\" -o -iname \"*.webp\" \\\\\\) 2>/dev/null *)",
+      "Read(//home/toto/**)",
+      "Read(//tmp/claude-1000/-home-toto-Documentos-CODE-torneo-santana-website/**)",
+      "Bash(python3 -c \"import PIL; print\\(PIL.__version__\\)\")",
+      "Bash(identify /home/toto/Documentos/CODE/torneo-santana-website/public/logoSantana.png)",
+      "Bash(echo \"exit:$?\")"
     ]
   }
 }
