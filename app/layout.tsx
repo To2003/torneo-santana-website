@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from 'next/font/google'
 import { Analytics } from '@vercel/analytics/next'
 import { Navbar } from '@/components/layout/navbar'
 import { Footer } from '@/components/layout/footer'
+import { AutoRefresh } from '@/components/shared/auto-refresh'
 import './globals.css'
 
 const _geist = Geist({ subsets: ['latin'] })
@@ -40,6 +41,7 @@ export default function RootLayout({
   return (
     <html lang="es" className="bg-background">
       <body className="font-sans antialiased min-h-screen flex flex-col">
+        <AutoRefresh />
         <Navbar />
         <main className="flex-1">
           {children}

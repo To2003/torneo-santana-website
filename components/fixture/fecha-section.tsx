@@ -7,9 +7,27 @@ interface FechaSectionProps {
   partidos: Partido[]
   equipos: Equipo[]
   showResultados?: boolean
+  equipoLibre?: Equipo | null
 }
 
-export function FechaSection({ fecha, dia, partidos, equipos, showResultados = false }: FechaSectionProps) {
+function EquipoLibreCard({ equipo }: { equipo: Equipo }) {
+  return (
+    <div className="flex flex-col items-center justify-center gap-3 rounded-xl border border-dashed border-border bg-slate-50/60 p-6 text-center">
+      <div
+        className="flex h-16 w-16 items-center justify-center rounded-full text-xl font-bold text-white shadow-md"
+        style={{ backgroundColor: equipo.colorPrimario }}
+      >
+        {equipo.nombre.substring(0, 2).toUpperCase()}
+      </div>
+      <div>
+        <span className="block text-xs font-bold uppercase tracking-wider text-muted-foreground">Descansa esta fecha</span>
+        <span className="block text-base font-bold text-slate-700">{equipo.nombre}</span>
+      </div>
+    </div>
+  )
+}
+
+export function FechaSection({ fecha, dia, partidos, equipos, showResultados = false, equipoLibre }: FechaSectionProps) {
   const getEquipo = (id: string) => equipos.find(e => e.id === id)
 
   // Agrupar por dia
@@ -31,36 +49,41 @@ export function FechaSection({ fecha, dia, partidos, equipos, showResultados = f
 
       {/* Partidos agrupados por dia */}
       <div className="divide-y divide-border">
-        {Object.entries(partidosPorDia).map(([diaPartido, partidosDia]) => (
-          <div key={diaPartido}>
-            {/* Dia header */}
-            <div className="bg-torneo-accent px-4 py-2">
-              <h4 className="text-center font-semibold text-black uppercase tracking-wide">
-                {diaPartido}
-              </h4>
+        {Object.entries(partidosPorDia).map(([diaPartido, partidosDia], idxDia, dias) => {
+          const esUltimoDia = idxDia === dias.length - 1
+
+          return (
+            <div key={diaPartido}>
+              {/* Dia header */}
+              <div className="bg-torneo-accent px-4 py-2">
+                <h4 className="text-center font-semibold text-black uppercase tracking-wide">
+                  {diaPartido}
+                </h4>
+              </div>
+
+              {/* Partidos del dia */}
+              <div className="grid gap-4 p-4 md:grid-cols-2">
+                {partidosDia.map((partido) => {
+                  const equipoLocal = getEquipo(partido.equipoLocal)
+                  const equipoVisitante = getEquipo(partido.equipoVisitante)
+
+                  if (!equipoLocal || !equipoVisitante) return null
+
+                  return (
+                    <PartidoCard
+                      key={partido.id}
+                      partido={partido}
+                      equipoLocal={equipoLocal}
+                      equipoVisitante={equipoVisitante}
+                      showResultado={showResultados}
+                    />
+                  )
+                })}
+                {esUltimoDia && equipoLibre && <EquipoLibreCard equipo={equipoLibre} />}
+              </div>
             </div>
-            
-            {/* Partidos del dia */}
-            <div className="grid gap-4 p-4 md:grid-cols-2 lg:grid-cols-3">
-              {partidosDia.map((partido) => {
-                const equipoLocal = getEquipo(partido.equipoLocal)
-                const equipoVisitante = getEquipo(partido.equipoVisitante)
-                
-                if (!equipoLocal || !equipoVisitante) return null
-                
-                return (
-                  <PartidoCard 
-                    key={partido.id}
-                    partido={partido}
-                    equipoLocal={equipoLocal}
-                    equipoVisitante={equipoVisitante}
-                    showResultado={showResultados}
-                  />
-                )
-              })}
-            </div>
-          </div>
-        ))}
+          )
+        })}
       </div>
     </div>
   )

@@ -1,0 +1,17 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npx tsc *)",
+      "Bash(npm run *)",
+      "Bash(curl -s \"https://docs.google.com/spreadsheets/d/1uSkYMWMITS2kaRx_XRe4XgMx6HXb0YieFaFXgQH3iu8/gviz/tq?tqx=out:csv&sheet=Fecha%201\")",
+      "Bash(curl -s \"https://docs.google.com/spreadsheets/d/1uSkYMWMITS2kaRx_XRe4XgMx6HXb0YieFaFXgQH3iu8/gviz/tq?tqx=out:csv&sheet=Equipos\")",
+      "Bash(xxd)",
+      "Bash(curl -s localhost:3000/)",
+      "Bash(curl -s localhost:3000/playoffs)",
+      "Bash(curl -s localhost:3000/fixture)",
+      "Bash(curl -s \"localhost:3000/fixture\")",
+      "Bash(curl -s -o /tmp/home.html -w \"%{http_code}\\\\n\" localhost:3000/)",
+      "Read(//tmp/**)"
+    ]
+  }
+}

@@ -15,12 +15,7 @@ const navItems = [
 export function Navbar() {
   const pathname = usePathname()
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
-
-  // Función compartida para avisar que se viene la fase final
-  const manejarClickPlayoffs = () => {
-    setMobileMenuOpen(false) // Cierra el menú móvil si estaba abierto
-    alert('🏆 ¡Próximamente! La fase de Playoffs / Playout se habilitará al término de la etapa regular.')
-  }
+  const playoffsActivo = pathname === '/playoffs' || pathname.startsWith('/playoffs')
 
   return (
     <header className="sticky top-0 z-50 w-full bg-gradient-to-b from-[#1a3a5c] to-[#0d2340] shadow-lg">
@@ -79,13 +74,15 @@ export function Navbar() {
             )
           })}
 
-          {/* NUEVO BOTÓN PARA ESCRITORIO */}
-          <button
-            onClick={manejarClickPlayoffs}
-            className="rounded-md px-4 py-2 text-sm font-bold uppercase tracking-wider text-amber-400 transition-all hover:text-amber-300 hover:scale-105 cursor-pointer ml-1"
+          <Link
+            href="/playoffs"
+            className={cn(
+              'rounded-md px-4 py-2 text-sm font-bold uppercase tracking-wider transition-all hover:scale-105 ml-1',
+              playoffsActivo ? 'text-amber-300' : 'text-amber-400 hover:text-amber-300'
+            )}
           >
             Playoffs ⚡
-          </button>
+          </Link>
         </nav>
 
         {/* Mobile Menu Button */}
@@ -123,13 +120,16 @@ export function Navbar() {
               )
             })}
 
-            {/* NUEVO BOTÓN PARA MENÚ MÓVIL */}
-            <button
-              onClick={manejarClickPlayoffs}
-              className="flex w-full rounded-md px-4 py-3 text-sm font-bold uppercase tracking-wider text-amber-400 hover:bg-white/5 transition-colors cursor-pointer text-left"
+            <Link
+              href="/playoffs"
+              onClick={() => setMobileMenuOpen(false)}
+              className={cn(
+                'flex w-full rounded-md px-4 py-3 text-sm font-bold uppercase tracking-wider hover:bg-white/5 transition-colors text-left',
+                playoffsActivo ? 'text-amber-300 bg-white/5' : 'text-amber-400'
+              )}
             >
               Playoffs ⚡
-            </button>
+            </Link>
           </div>
         </nav>
       )}

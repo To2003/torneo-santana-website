@@ -12,10 +12,6 @@ interface PartidoCardProps {
 export function PartidoCard({ partido, equipoLocal, equipoVisitante, showResultado = false }: PartidoCardProps) {
   const tieneResultado = partido.jugado && partido.setsLocal !== undefined && partido.setsVisitante !== undefined
 
-  // Validamos si los equipos tienen un escudo real de Imgur cargado
-  const localTieneLogo = equipoLocal.logo && !equipoLocal.logo.includes('default.png')
-  const visitanteTieneLogo = equipoVisitante.logo && !equipoVisitante.logo.includes('default.png')
-
   return (
     <div className="overflow-hidden rounded-xl border border-border bg-card shadow-md transition-all hover:shadow-lg">
       {/* Header con hora y cancha */}
@@ -40,16 +36,7 @@ export function PartidoCard({ partido, equipoLocal, equipoVisitante, showResulta
               className="mb-2 flex h-16 w-16 items-center justify-center overflow-hidden rounded-full text-xl font-bold text-white shadow-md border border-slate-100"
               style={{ backgroundColor: equipoLocal.colorPrimario }}
             >
-              {localTieneLogo ? (
-                <img
-                  src={equipoLocal.logo}
-                  alt={`Escudo de ${equipoLocal.nombre}`}
-                  className="h-full w-full object-cover"
-                  referrerPolicy="no-referrer"
-                />
-              ) : (
-                equipoLocal.nombre.substring(0, 2).toUpperCase()
-              )}
+              {equipoLocal.nombre.substring(0, 2).toUpperCase()}
             </div>
             <span className="text-sm font-semibold leading-tight text-slate-700">{equipoLocal.nombre}</span>
           </div>
@@ -86,16 +73,7 @@ export function PartidoCard({ partido, equipoLocal, equipoVisitante, showResulta
               className="mb-2 flex h-16 w-16 items-center justify-center overflow-hidden rounded-full text-xl font-bold text-white shadow-md border border-slate-100"
               style={{ backgroundColor: equipoVisitante.colorPrimario }}
             >
-              {visitanteTieneLogo ? (
-                <img
-                  src={equipoVisitante.logo}
-                  alt={`Escudo de ${equipoVisitante.nombre}`}
-                  className="h-full w-full object-cover"
-                  referrerPolicy="no-referrer"
-                />
-              ) : (
-                equipoVisitante.nombre.substring(0, 2).toUpperCase()
-              )}
+              {equipoVisitante.nombre.substring(0, 2).toUpperCase()}
             </div>
             <span className="text-sm font-semibold leading-tight text-slate-700">{equipoVisitante.nombre}</span>
           </div>

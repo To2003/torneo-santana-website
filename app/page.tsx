@@ -5,6 +5,7 @@ import { InfoTorneo } from '@/components/home/info-torneo'
 import {
   getConfiguracion,
   getTablaPosiciones,
+  getTablaPosicionesPorGrupo,
   getUltimosMVPs,
   getEquipos
 } from '@/lib/google-sheets'
@@ -28,9 +29,11 @@ const configRespaldo = {
 }
 
 export default async function HomePage() {
-  const [configSheet, posiciones, ultimosMVPs, equipos] = await Promise.all([
+  const [configSheet, posicionesGeneral, posicionesTorneoA, posicionesTorneoB, ultimosMVPs, equipos] = await Promise.all([
     getConfiguracion(),
     getTablaPosiciones(),
+    getTablaPosicionesPorGrupo('A'),
+    getTablaPosicionesPorGrupo('B'),
     getUltimosMVPs(),
     getEquipos()
   ])
@@ -60,7 +63,11 @@ export default async function HomePage() {
           <div className="grid gap-6 lg:grid-cols-3">
             {/* Tabla de Posiciones - 2 columnas en desktop */}
             <div className="min-w-0 lg:col-span-2">
-              <TablaPosiciones posiciones={posiciones} />
+              <TablaPosiciones
+                general={posicionesGeneral}
+                torneoA={posicionesTorneoA}
+                torneoB={posicionesTorneoB}
+              />
             </div>
 
             {/* Sidebar - Ultimos MVPs */}

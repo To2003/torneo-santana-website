@@ -1,5 +1,5 @@
 import { FechaSection } from '@/components/fixture/fecha-section'
-import { getTodosLosPartidos, getEquipos } from '@/lib/google-sheets'
+import { getTodosLosPartidos, getEquipos, getEquipoLibre } from '@/lib/google-sheets'
 
 export const metadata = {
   title: 'Fixture | Torneo Santana',
@@ -21,6 +21,11 @@ export default async function FixturePage() {
   }, {} as Record<number, { partidos: typeof partidos, dia: string }>)
 
   const fechas = Object.keys(partidosPorFecha).map(Number).sort((a, b) => a - b)
+
+  // Equipo que descansa en cada fecha
+  const equiposLibrePorFecha = Object.fromEntries(
+    await Promise.all(fechas.map(async (f) => [f, await getEquipoLibre(f, equipos)] as const))
+  )
 
   return (
     <div className="min-h-screen">
@@ -50,7 +55,7 @@ export default async function FixturePage() {
                 partidos={partidosFecha}
                 equipos={equipos}
                 showResultados={true}
-
+                equipoLibre={equiposLibrePorFecha[numeroFecha]}
               />
             )
           })}

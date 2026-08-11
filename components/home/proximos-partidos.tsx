@@ -39,10 +39,7 @@ export function ProximosPartidos({ partidos, equipos, className }: ProximosParti
               const equipoVisitante = getEquipo(partido.equipoVisitante)
               
               if (!equipoLocal || !equipoVisitante) return null
-              
-              const localTieneLogo = equipoLocal.logo && !equipoLocal.logo.includes('default.png')
-              const visitanteTieneLogo = equipoVisitante.logo && !equipoVisitante.logo.includes('default.png')
-              
+
               return (
                 <div key={partido.id} className="px-4 py-3">
                   {/* Fecha badge */}
@@ -59,11 +56,7 @@ export function ProximosPartidos({ partidos, equipos, className }: ProximosParti
                         className="flex h-7 w-7 shrink-0 items-center justify-center overflow-hidden rounded-full border border-slate-200 text-[10px] font-bold text-white shadow-sm"
                         style={{ backgroundColor: equipoLocal.colorPrimario }}
                       >
-                        {localTieneLogo ? (
-                          <img src={equipoLocal.logo} alt={equipoLocal.nombre} className="h-full w-full object-cover" referrerPolicy="no-referrer" />
-                        ) : (
-                          equipoLocal.nombre.substring(0, 2).toUpperCase()
-                        )}
+                        {equipoLocal.nombre.substring(0, 2).toUpperCase()}
                       </div>
                       <span className="font-semibold">{equipoLocal.nombre.split(' ')[0]}</span>
                     </div>
@@ -76,11 +69,7 @@ export function ProximosPartidos({ partidos, equipos, className }: ProximosParti
                         className="flex h-7 w-7 shrink-0 items-center justify-center overflow-hidden rounded-full border border-slate-200 text-[10px] font-bold text-white shadow-sm"
                         style={{ backgroundColor: equipoVisitante.colorPrimario }}
                       >
-                        {visitanteTieneLogo ? (
-                          <img src={equipoVisitante.logo} alt={equipoVisitante.nombre} className="h-full w-full object-cover" referrerPolicy="no-referrer" />
-                        ) : (
-                          equipoVisitante.nombre.substring(0, 2).toUpperCase()
-                        )}
+                        {equipoVisitante.nombre.substring(0, 2).toUpperCase()}
                       </div>
                     </div>
                   </div>

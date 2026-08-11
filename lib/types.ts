@@ -4,11 +4,13 @@ export interface Equipo {
   id: string
   nombre: string
   slug: string
-  logo: string
   colorPrimario: string
   jugadores: string[]
   instagram?: string
   whatsapp?: string
+  grupo: 'A' | 'B'
+  copaDeOro: boolean
+  playoff: boolean
 }
 
 export interface Partido {
@@ -52,4 +54,9 @@ export interface FechaFixture {
   numero: number
   dia: string
   partidos: Partido[]
+}
+
+export interface HabilitacionTorneos {
+  copaDeOro: boolean
+  playoff: boolean
 }

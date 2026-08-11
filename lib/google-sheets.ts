@@ -1,10 +1,10 @@
 import Papa from 'papaparse'
-import type { Equipo, Partido, ConfiguracionTorneo } from './types'
+import type { Equipo, Partido, ConfiguracionTorneo, HabilitacionTorneos, Posicion } from './types'
 import { equiposMock, partidosMock, configuracionMock } from './mock-data'
 
 // Usamos tu ID de planilla. Asegurate de que esté Pública (Cualquier usuario con el vínculo -> Lector)
 const SHEET_ID = process.env.GOOGLE_SHEETS_ID || '1uSkYMWMITS2kaRx_XRe4XgMx6HXb0YieFaFXgQH3iu8'
-const CACHE_REVALIDATE = 60 // 60 segundos de caché
+const CACHE_REVALIDATE = 20 // 20 segundos de caché
 
 // Función para leer la hoja pública en formato CSV
 async function getSheetData(sheetName: string): Promise<string[][] | null> {
@@ -28,6 +28,29 @@ async function getSheetData(sheetName: string): Promise<string[][] | null> {
 
 // En lib/google-sheets.ts
 
+// Interpreta el texto de un checkbox de Sheets (TRUE/FALSE, VERDADERO/FALSO) como booleano
+function parseCheckbox(valor?: string): boolean {
+  if (!valor) return false
+  const v = valor.trim().toUpperCase()
+  return v === 'TRUE' || v === 'VERDADERO' || v === '1'
+}
+
+// Quita caracteres invisibles que suelen colarse al pegar texto en Sheets
+// (word joiner, zero-width space, BOM, etc.) y espacios de sobra
+function limpiarTexto(valor: string): string {
+  return valor.replace(/[\u200B-\u200D\uFEFF\u2060]/g, '').trim()
+}
+
+// Normaliza un nombre de equipo para comparar sin importar mayúsculas,
+// acentos o espacios (ej: "SUPER AMIGOS" y "Superamigos" deben matchear)
+function normalizarNombre(valor: string): string {
+  return limpiarTexto(valor)
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]/g, '')
+}
+
 export async function getEquipos(): Promise<Equipo[]> {
   const data = await getSheetData('Equipos')
 
@@ -40,11 +63,10 @@ export async function getEquipos(): Promise<Equipo[]> {
   const coloresFallback = ['#1a5f7a', '#e63946', '#2a9d8f', '#f4a261', '#e76f51', '#264653']
 
   return rows
-    .filter(row => row[0] && row[0] !== 'LIBRE') // Ignorar filas vacías
+    .filter(row => row[0] && normalizarNombre(row[0]) !== 'libre') // Ignorar filas vacías
     .map((row, index) => {
       // Extraemos las nuevas columnas (si están vacías, usamos valores por defecto)
-      const nombre = row[0]
-      const urlEscudo = row[1] && row[1].trim() !== "" ? row[1].trim() : `/equipos/default.png`
+      const nombre = limpiarTexto(row[0])
 
       // Separamos la lista de jugadores por coma y quitamos espacios extra
       const jugadoresRaw = row[2] ? row[2].split(',') : []
@@ -53,19 +75,49 @@ export async function getEquipos(): Promise<Equipo[]> {
       // Usamos el color de la hoja si existe, sino usamos el fallback
       const colorPrimario = row[3] && row[3].trim() !== "" ? row[3].trim() : coloresFallback[index % coloresFallback.length]
 
+      // Columna B: grupo de la temporada regular (Torneo A / Torneo B)
+      const grupoRaw = (row[1] || '').trim().toUpperCase()
+      const grupo: 'A' | 'B' = grupoRaw === 'B' ? 'B' : 'A'
+
+      // Columna E: clasificado a Copa de Oro/Plata | Columna F: clasificado a Playoff
+      const copaDeOro = parseCheckbox(row[4])
+      const playoff = parseCheckbox(row[5])
+
       return {
         id: String(index + 1),
         nombre: nombre,
         slug: nombre.toLowerCase().replace(/\s+/g, '-'),
-        logo: urlEscudo, // Ahora usa el link del Sheets!
         colorPrimario: colorPrimario, // Ahora usa el color del Sheets!
         jugadores: jugadores, // ¡Ahora el plantel tiene nombres!
+        grupo,
+        copaDeOro,
+        playoff,
       }
     })
 }
 
 export async function getConfiguracion(): Promise<ConfiguracionTorneo> {
   return configuracionMock // Mantenemos el mock para la config por ahora
+}
+
+// Lee las columnas G/H de la hoja "Equipos", donde se habilita/deshabilita
+// la visibilidad pública de cada torneo (Copa de Oro/Plata y Playoff)
+export async function getHabilitacionTorneos(): Promise<HabilitacionTorneos> {
+  const data = await getSheetData('Equipos')
+
+  const habilitacion: HabilitacionTorneos = { copaDeOro: false, playoff: false }
+  if (!data || data.length < 2) return habilitacion
+
+  data.slice(1).forEach(row => {
+    const etiqueta = (row[6] || '').trim().toUpperCase()
+    if (!etiqueta) return
+
+    const habilitado = parseCheckbox(row[7])
+    if (etiqueta.includes('PLAYOFF')) habilitacion.playoff = habilitado
+    else if (etiqueta.includes('COPA')) habilitacion.copaDeOro = habilitado
+  })
+
+  return habilitacion
 }
 
 export async function getPartidosFecha(numeroFecha: number, equipos: Equipo[]): Promise<Partido[]> {
@@ -87,11 +139,14 @@ export async function getPartidosFecha(numeroFecha: number, equipos: Equipo[]): 
     const mvpRaw = row[6]
     const mvp = mvpRaw && mvpRaw.trim() !== "" ? mvpRaw.trim() : undefined
 
-    if (!nombreLocal || !nombreVisitante || nombreLocal === "LIBRE" || nombreVisitante === "LIBRE" || nombreVisitante === "Queda") return
+    if (!nombreLocal || !nombreVisitante) return
+    const localEsLibre = ['libre', 'queda'].includes(normalizarNombre(nombreLocal))
+    const visitanteEsLibre = ['libre', 'queda'].includes(normalizarNombre(nombreVisitante))
+    if (localEsLibre || visitanteEsLibre) return
 
-    // Buscar IDs de equipos
-    const local = equipos.find(e => e.nombre === nombreLocal)
-    const visitante = equipos.find(e => e.nombre === nombreVisitante)
+    // Buscar IDs de equipos (comparación tolerante a mayúsculas, acentos y espacios)
+    const local = equipos.find(e => normalizarNombre(e.nombre) === normalizarNombre(nombreLocal))
+    const visitante = equipos.find(e => normalizarNombre(e.nombre) === normalizarNombre(nombreVisitante))
 
     if (local && visitante) {
       const jugado = resLocal !== "" && resLocal !== "-" && resVisitante !== "" && resVisitante !== "-"
@@ -113,6 +168,34 @@ export async function getPartidosFecha(numeroFecha: number, equipos: Equipo[]): 
   })
 
   return partidos
+}
+
+// Encuentra el equipo que descansa (fila "Queda / LIBRE") en una fecha dada
+export async function getEquipoLibre(numeroFecha: number, equipos: Equipo[]): Promise<Equipo | null> {
+  const data = await getSheetData(`Fecha ${numeroFecha}`)
+  if (!data || data.length < 2) return null
+
+  const rows = data.slice(1)
+
+  for (const row of rows) {
+    if (row.length < 6) continue
+
+    const nombreLocal = row[1]
+    const nombreVisitante = row[5]
+    if (!nombreLocal || !nombreVisitante) continue
+
+    const localEsLibre = ['libre', 'queda'].includes(normalizarNombre(nombreLocal))
+    const visitanteEsLibre = ['libre', 'queda'].includes(normalizarNombre(nombreVisitante))
+
+    if (visitanteEsLibre && !localEsLibre) {
+      return equipos.find(e => normalizarNombre(e.nombre) === normalizarNombre(nombreLocal)) || null
+    }
+    if (localEsLibre && !visitanteEsLibre) {
+      return equipos.find(e => normalizarNombre(e.nombre) === normalizarNombre(nombreVisitante)) || null
+    }
+  }
+
+  return null
 }
 
 export async function getTodosLosPartidos(): Promise<Partido[]> {
@@ -150,10 +233,7 @@ export async function getUltimosMVPs(): Promise<Partido[]> {
   return partidosConMvp.filter(p => p.fecha === ultimaFechaConMvp)
 }
 
-export async function getTablaPosiciones() {
-  const equipos = await getEquipos()
-  const partidos = await getTodosLosPartidos()
-
+function calcularTabla(equipos: Equipo[], partidos: Partido[]): Posicion[] {
   const posiciones = equipos.map(equipo => {
     // Filtrar los partidos que este equipo ya jugó
     const partidosEquipo = partidos.filter(p =>
@@ -207,6 +287,36 @@ export async function getTablaPosiciones() {
   })
 
   return posiciones
+}
+
+export async function getTablaPosiciones(): Promise<Posicion[]> {
+  const equipos = await getEquipos()
+  const partidos = await getTodosLosPartidos()
+  return calcularTabla(equipos, partidos)
+}
+
+// Tabla de posiciones de la temporada regular, filtrada por grupo (Torneo A / Torneo B)
+export async function getTablaPosicionesPorGrupo(grupo: 'A' | 'B'): Promise<Posicion[]> {
+  const equipos = await getEquipos()
+  const partidos = await getTodosLosPartidos()
+  const equiposDelGrupo = equipos.filter(e => e.grupo === grupo)
+  return calcularTabla(equiposDelGrupo, partidos)
+}
+
+// Tabla de posiciones filtrada a los equipos de un torneo/instancia específica.
+// Copa de ORO: tildados en la columna E. Copa de PLATA: los que no lo están.
+// Playoff: por ahora solo entran los tildados en la columna F.
+export async function getTablaPosicionesPorTorneo(torneo: 'copaDeOro' | 'copaDePlata' | 'playoff'): Promise<Posicion[]> {
+  const equipos = await getEquipos()
+  const partidos = await getTodosLosPartidos()
+
+  const equiposClasificados = equipos.filter(e => {
+    if (torneo === 'copaDeOro') return e.copaDeOro
+    if (torneo === 'copaDePlata') return !e.copaDeOro
+    return e.playoff
+  })
+
+  return calcularTabla(equiposClasificados, partidos)
 }
 
 export async function getEquipoBySlug(slug: string): Promise<Equipo | null> {

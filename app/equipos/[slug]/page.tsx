@@ -44,7 +44,6 @@ export default async function EquipoDetallePage({ params }: Props) {
 
   const puntosTotales = (ganados * 4) + (g2 * 2) + (perdidos * 1) + (p3 * 1)
   const getEquipoById = (id: string) => equipos.find(e => e.id === id)
-  const tieneLogo = equipo.logo && !equipo.logo.includes('default.png')
 
   return (
     <div className="min-h-screen">
@@ -56,7 +55,7 @@ export default async function EquipoDetallePage({ params }: Props) {
           </Link>
           <div className="flex flex-col items-center gap-6 md:flex-row">
             <div className="flex h-32 w-32 shrink-0 items-center justify-center overflow-hidden rounded-full bg-white text-4xl font-bold shadow-xl" style={{ color: equipo.colorPrimario }}>
-              {tieneLogo ? <img src={equipo.logo} alt={`Escudo de ${equipo.nombre}`} className="h-full w-full object-cover" referrerPolicy="no-referrer" /> : equipo.nombre.substring(0, 2).toUpperCase()}
+              {equipo.nombre.substring(0, 2).toUpperCase()}
             </div>
             <div className="text-center md:text-left">
               <h1 className="text-4xl font-black uppercase tracking-tight text-white md:text-5xl">{equipo.nombre}</h1>
@@ -102,7 +101,6 @@ export default async function EquipoDetallePage({ params }: Props) {
                 <div className="flex flex-1 flex-col justify-center space-y-4">
                   {proximosPartidos.slice(0, 3).map((partido) => {
                     const rival = getEquipoById(partido.equipoLocal === equipo.id ? partido.equipoVisitante : partido.equipoLocal)
-                    const rivalTieneLogo = rival?.logo && !rival?.logo.includes('default.png')
 
                     return (
                       <div
@@ -131,11 +129,7 @@ export default async function EquipoDetallePage({ params }: Props) {
                             className="flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-full text-base font-black text-white shadow-md border-4 border-white transition-transform hover:scale-105"
                             style={{ backgroundColor: rival?.colorPrimario || '#ccc' }}
                           >
-                            {rivalTieneLogo ? (
-                              <img src={rival.logo} alt={rival.nombre} className="h-full w-full object-cover" referrerPolicy="no-referrer" />
-                            ) : (
-                              rival?.nombre.substring(0, 2).toUpperCase()
-                            )}
+                            {rival?.nombre.substring(0, 2).toUpperCase()}
                           </div>
                         </div>
                       </div>

@@ -29,7 +29,7 @@ export function Hero({ config }: HeroProps) {
           {/* Badge */}
           <div className="mb-4 inline-flex items-center gap-2 rounded-full bg-torneo-accent/20 px-4 py-2">
             <Trophy className="h-4 w-4 text-torneo-accent" />
-            <span className="text-sm font-semibold text-torneo-accent">Temporada 2024</span>
+            <span className="text-sm font-semibold text-torneo-accent">Temporada 2026</span>
           </div>
           
           {/* Title */}
