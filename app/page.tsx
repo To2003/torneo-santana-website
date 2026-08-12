@@ -4,7 +4,6 @@ import { UltimosMVPs } from '@/components/home/ultimos-mvps'
 import { InfoTorneo } from '@/components/home/info-torneo'
 import {
   getConfiguracion,
-  getTablaPosiciones,
   getTablaPosicionesPorGrupo,
   getUltimosMVPs,
   getEquipos
@@ -29,11 +28,10 @@ const configRespaldo = {
 }
 
 export default async function HomePage() {
-  const [configSheet, posicionesGeneral, posicionesTorneoA, posicionesTorneoB, ultimosMVPs, equipos] = await Promise.all([
+  const [configSheet, posicionesTorneoA, posicionesTorneoB, ultimosMVPs, equipos] = await Promise.all([
     getConfiguracion(),
-    getTablaPosiciones(),
-    getTablaPosicionesPorGrupo('A'),
-    getTablaPosicionesPorGrupo('B'),
+    getTablaPosicionesPorGrupo('1'),
+    getTablaPosicionesPorGrupo('2'),
     getUltimosMVPs(),
     getEquipos()
   ])
@@ -64,7 +62,6 @@ export default async function HomePage() {
             {/* Tabla de Posiciones - 2 columnas en desktop */}
             <div className="min-w-0 lg:col-span-2">
               <TablaPosiciones
-                general={posicionesGeneral}
                 torneoA={posicionesTorneoA}
                 torneoB={posicionesTorneoB}
               />

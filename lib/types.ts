@@ -8,7 +8,7 @@ export interface Equipo {
   jugadores: string[]
   instagram?: string
   whatsapp?: string
-  grupo: 'A' | 'B'
+  grupo: '1' | '2'
   copaDeOro: boolean
   playoff: boolean
 }

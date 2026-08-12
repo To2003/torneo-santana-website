@@ -75,9 +75,9 @@ export async function getEquipos(): Promise<Equipo[]> {
       // Usamos el color de la hoja si existe, sino usamos el fallback
       const colorPrimario = row[3] && row[3].trim() !== "" ? row[3].trim() : coloresFallback[index % coloresFallback.length]
 
-      // Columna B: grupo de la temporada regular (Torneo A / Torneo B)
-      const grupoRaw = (row[1] || '').trim().toUpperCase()
-      const grupo: 'A' | 'B' = grupoRaw === 'B' ? 'B' : 'A'
+      // Columna B: zona de la temporada regular (Zona 1 / Zona 2)
+      const grupoRaw = (row[1] || '').trim()
+      const grupo: '1' | '2' = grupoRaw === '2' ? '2' : '1'
 
       // Columna E: clasificado a Copa de Oro/Plata | Columna F: clasificado a Playoff
       const copaDeOro = parseCheckbox(row[4])
@@ -289,14 +289,8 @@ function calcularTabla(equipos: Equipo[], partidos: Partido[]): Posicion[] {
   return posiciones
 }
 
-export async function getTablaPosiciones(): Promise<Posicion[]> {
-  const equipos = await getEquipos()
-  const partidos = await getTodosLosPartidos()
-  return calcularTabla(equipos, partidos)
-}
-
-// Tabla de posiciones de la temporada regular, filtrada por grupo (Torneo A / Torneo B)
-export async function getTablaPosicionesPorGrupo(grupo: 'A' | 'B'): Promise<Posicion[]> {
+// Tabla de posiciones de la temporada regular, filtrada por zona (Zona 1 / Zona 2)
+export async function getTablaPosicionesPorGrupo(grupo: '1' | '2'): Promise<Posicion[]> {
   const equipos = await getEquipos()
   const partidos = await getTodosLosPartidos()
   const equiposDelGrupo = equipos.filter(e => e.grupo === grupo)
