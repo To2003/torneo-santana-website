@@ -101,12 +101,12 @@ export async function getEquipos(): Promise<Equipo[]> {
       const grupoRaw = (row[1] || '').trim()
       const grupo: '1' | '2' = grupoRaw === '2' ? '2' : '1'
 
-      // Columna E: clasificado a Copa de Oro/Plata | Columna F: clasificado a Playoff
-      const copaDeOro = parseCheckbox(row[4])
-      const playoff = parseCheckbox(row[5])
+      // Columna E: escudo del equipo (link de Drive u otra URL de imagen)
+      const logo = row[4] && row[4].trim() !== '' ? normalizarUrlImagen(row[4]) : undefined
 
-      // Columna I: escudo del equipo (link de Drive u otra URL de imagen)
-      const logo = row[8] && row[8].trim() !== '' ? normalizarUrlImagen(row[8]) : undefined
+      // Columna F: clasificado a Copa de Oro/Plata | Columna G: clasificado a Playoff
+      const copaDeOro = parseCheckbox(row[5])
+      const playoff = parseCheckbox(row[6])
 
       return {
         id: String(index + 1),
@@ -135,10 +135,10 @@ export async function getHabilitacionTorneos(): Promise<HabilitacionTorneos> {
   if (!data || data.length < 2) return habilitacion
 
   data.slice(1).forEach(row => {
-    const etiqueta = (row[6] || '').trim().toUpperCase()
+    const etiqueta = (row[7] || '').trim().toUpperCase()
     if (!etiqueta) return
 
-    const habilitado = parseCheckbox(row[7])
+    const habilitado = parseCheckbox(row[8])
     if (etiqueta.includes('PLAYOFF')) habilitacion.playoff = habilitado
     else if (etiqueta.includes('COPA')) habilitacion.copaDeOro = habilitado
   })
@@ -353,14 +353,19 @@ export async function getPartidosEquipo(equipoId: string): Promise<Partido[]> {
 // Columnas: A) Imagen (link de Drive) | B) Link al posteo/perfil | C) Texto (opcional)
 export async function getInstagramPosts(): Promise<InstagramPost[]> {
   const data = await getSheetData('Instagram')
-  if (!data || data.length < 2) return []
+  if (!data) return []
 
-  return data.slice(1)
-    .filter(row => row[0] && row[0].trim() !== '')
+  // La hoja tiene un título arriba, así que buscamos la fila de encabezados
+  // ("IMAGENES") en vez de asumir que los datos arrancan en la fila 2
+  const indiceEncabezado = data.findIndex(row => (row[1] || '').trim().toUpperCase() === 'IMAGENES')
+  const rows = indiceEncabezado >= 0 ? data.slice(indiceEncabezado + 1) : data.slice(1)
+
+  return rows
+    .filter(row => row[1] && row[1].trim() !== '')
     .map((row, index) => ({
       id: String(index + 1),
-      imagen: normalizarUrlImagen(row[0]),
-      link: row[1] && row[1].trim() !== '' ? limpiarTexto(row[1]) : 'https://instagram.com',
-      texto: row[2] && row[2].trim() !== '' ? limpiarTexto(row[2]) : undefined,
+      imagen: normalizarUrlImagen(row[1]),
+      link: row[2] && row[2].trim() !== '' ? limpiarTexto(row[2]) : 'https://instagram.com',
+      texto: row[3] && row[3].trim() !== '' ? limpiarTexto(row[3]) : undefined,
     }))
 }
