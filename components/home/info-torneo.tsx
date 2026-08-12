@@ -1,4 +1,4 @@
-import { CheckCircle, MapPin, ExternalLink } from 'lucide-react'
+import { CheckCircle, MapPin, ExternalLink, FileText } from 'lucide-react'
 import type { ConfiguracionTorneo } from '@/lib/types'
 
 interface InfoTorneoProps {
@@ -6,9 +6,12 @@ interface InfoTorneoProps {
 }
 
 export function InfoTorneo({ config }: InfoTorneoProps) {
-  // Dirección y enlaces exactos para Maestro Santana 310, San Isidro
-  const direccionReal = "Maestro Santana 310, B1642 BQH, Provincia de Buenos Aires";
+  // Dirección y enlaces exactos para Maestro Santana 335, San Isidro
+  const direccionReal = "Maestro Santana 335, B1642 BQH, Provincia de Buenos Aires";
   const googleMapsUrlReal = "https://maps.google.com/?q=Maestro+Santana+310,+B1642+BQH,+Provincia+de+Buenos+Aires";
+
+  // Link al reglamento completo en PDF (Google Drive)
+  const reglamentoUrl = "https://drive.google.com/file/d/1j0BUsglzerLMTjRl06n-1X99x0O7GRvX/view?usp=drive_link";
 
   // URL de Embed generada específicamente para esa dirección exacta
   const iframeSrcReal = "https://maps.google.com/maps?q=Maestro%20Santana%20310%20San%20Isidro&t=&z=15&ie=UTF8&iwloc=&output=embed";
@@ -18,7 +21,7 @@ export function InfoTorneo({ config }: InfoTorneoProps) {
       <div className="mx-auto max-w-7xl px-4">
         <div className="grid gap-8 lg:grid-cols-2">
           {/* Reglas */}
-          <div className="rounded-xl border border-border bg-card p-6 shadow-lg">
+          <div className="flex flex-col rounded-xl border border-border bg-card p-6 shadow-lg">
             <h3 className="mb-4 flex items-center gap-2 text-xl font-bold text-torneo-primary">
               <CheckCircle className="h-6 w-6" />
               Reglas del Torneo
@@ -33,6 +36,18 @@ export function InfoTorneo({ config }: InfoTorneoProps) {
                 </li>
               ))}
             </ul>
+
+            <div className="mt-4 pt-4 border-t border-slate-100">
+              <a
+                href={reglamentoUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 text-sm font-bold text-[#1f4e78] hover:text-[#1f4e78]/80 hover:underline transition-colors bg-slate-50 px-4 py-2.5 rounded-lg border border-slate-200/60 shadow-sm"
+              >
+                <FileText className="h-4 w-4" />
+                Ver reglamento completo
+              </a>
+            </div>
           </div>
 
           {/* Ubicación */}
@@ -47,7 +62,7 @@ export function InfoTorneo({ config }: InfoTorneoProps) {
                 {config.ubicacion && config.ubicacion.length > 5 ? config.ubicacion : direccionReal}
               </p>
 
-              {/* Mapa Interactivo apuntando a Maestro Santana 310 */}
+              {/* Mapa Interactivo apuntando a Maestro Santana 335 */}
               <div className="overflow-hidden rounded-lg border border-border shadow-inner bg-slate-100 relative group">
                 <iframe
                   src={iframeSrcReal}

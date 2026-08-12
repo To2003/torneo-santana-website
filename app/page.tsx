@@ -20,10 +20,9 @@ const configRespaldo = {
     'Bonus por partido ganado en 2 sets (2-0): 2 puntos',
     'Partido perdido: 1 punto',
     'Bonus por partido perdido en 3 sets (1-2): 1 punto',
-    'Torneo de voley MIXTO: mínimo 3 mujeres en cancha en todo momento',
-    'Partidos al mejor de 3 sets (Sets a 25 puntos, 3er set a 15 puntos)'
+    'Torneo de voley MIXTO: mínimo 3 mujeres en cancha en todo momento'
   ],
-  ubicacion: 'Maestro Santana 310, B1642 BQH, Provincia de Buenos Aires',
+  ubicacion: 'Maestro Santana 335, B1642 BQH, Provincia de Buenos Aires',
   googleMapsUrl: 'https://maps.google.com/?q=Maestro+Santana+310,+B1642+BQH,+Provincia+de+Buenos+Aires',
   fechaInicio: 'Clausura 2026',
   fechaFin: 'A confirmar'
