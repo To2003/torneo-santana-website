@@ -1,5 +1,6 @@
 import { Clock, MapPin } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { TeamAvatar } from '@/components/shared/team-avatar'
 import type { Partido, Equipo } from '@/lib/types'
 
 interface PartidoCardProps {
@@ -32,12 +33,13 @@ export function PartidoCard({ partido, equipoLocal, equipoVisitante, showResulta
 
           {/* Equipo Local */}
           <div className="flex flex-1 flex-col items-center text-center">
-            <div
-              className="mb-2 flex h-16 w-16 items-center justify-center overflow-hidden rounded-full text-xl font-bold text-white shadow-md border border-slate-100"
-              style={{ backgroundColor: equipoLocal.colorPrimario }}
-            >
-              {equipoLocal.nombre.substring(0, 2).toUpperCase()}
-            </div>
+            <TeamAvatar
+              nombre={equipoLocal.nombre}
+              colorPrimario={equipoLocal.colorPrimario}
+              logo={equipoLocal.logo}
+              className="mb-2 h-16 w-16 shadow-md"
+              textClassName="text-xl"
+            />
             <span className="text-sm font-semibold leading-tight text-slate-700">{equipoLocal.nombre}</span>
           </div>
 
@@ -69,12 +71,13 @@ export function PartidoCard({ partido, equipoLocal, equipoVisitante, showResulta
 
           {/* Equipo Visitante */}
           <div className="flex flex-1 flex-col items-center text-center">
-            <div
-              className="mb-2 flex h-16 w-16 items-center justify-center overflow-hidden rounded-full text-xl font-bold text-white shadow-md border border-slate-100"
-              style={{ backgroundColor: equipoVisitante.colorPrimario }}
-            >
-              {equipoVisitante.nombre.substring(0, 2).toUpperCase()}
-            </div>
+            <TeamAvatar
+              nombre={equipoVisitante.nombre}
+              colorPrimario={equipoVisitante.colorPrimario}
+              logo={equipoVisitante.logo}
+              className="mb-2 h-16 w-16 shadow-md"
+              textClassName="text-xl"
+            />
             <span className="text-sm font-semibold leading-tight text-slate-700">{equipoVisitante.nombre}</span>
           </div>
 

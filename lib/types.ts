@@ -11,6 +11,7 @@ export interface Equipo {
   grupo: '1' | '2'
   copaDeOro: boolean
   playoff: boolean
+  logo?: string
 }
 
 export interface Partido {
@@ -59,4 +60,11 @@ export interface FechaFixture {
 export interface HabilitacionTorneos {
   copaDeOro: boolean
   playoff: boolean
+}
+
+export interface InstagramPost {
+  id: string
+  imagen: string
+  link: string
+  texto?: string
 }

@@ -1,5 +1,6 @@
 import { Trophy } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { TeamAvatar } from '@/components/shared/team-avatar'
 import type { Posicion } from '@/lib/types'
 
 export function TablaSimple({ titulo, posiciones }: { titulo: string; posiciones: Posicion[] }) {
@@ -42,9 +43,13 @@ export function TablaSimple({ titulo, posiciones }: { titulo: string; posiciones
 
                     <td className={cn('sticky left-12 z-10 border-r border-border px-2 py-3', filaBg)}>
                       <div className="flex items-center gap-3">
-                        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-xs font-bold text-white shadow-sm border border-slate-200" style={{ backgroundColor: pos.equipo.colorPrimario }}>
-                          {pos.equipo.nombre.substring(0, 2).toUpperCase()}
-                        </div>
+                        <TeamAvatar
+                          nombre={pos.equipo.nombre}
+                          colorPrimario={pos.equipo.colorPrimario}
+                          logo={pos.equipo.logo}
+                          className="h-9 w-9"
+                          textClassName="text-xs"
+                        />
                         <span className="font-bold text-slate-700 whitespace-nowrap">{pos.equipo.nombre}</span>
                       </div>
                     </td>

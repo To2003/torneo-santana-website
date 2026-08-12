@@ -2,6 +2,7 @@ import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import { ArrowLeft, Instagram, MessageCircle, Users, Calendar } from 'lucide-react'
 import { getEquipoBySlug, getEquipos, getPartidosEquipo } from '@/lib/google-sheets'
+import { TeamAvatar } from '@/components/shared/team-avatar'
 import type { Metadata } from 'next'
 
 interface Props {
@@ -54,9 +55,14 @@ export default async function EquipoDetallePage({ params }: Props) {
             <ArrowLeft className="h-4 w-4" /> Volver a equipos
           </Link>
           <div className="flex flex-col items-center gap-6 md:flex-row">
-            <div className="flex h-32 w-32 shrink-0 items-center justify-center overflow-hidden rounded-full bg-white text-4xl font-bold shadow-xl" style={{ color: equipo.colorPrimario }}>
-              {equipo.nombre.substring(0, 2).toUpperCase()}
-            </div>
+            <TeamAvatar
+              nombre={equipo.nombre}
+              colorPrimario={equipo.colorPrimario}
+              logo={equipo.logo}
+              variant="contorno"
+              className="h-32 w-32 shadow-xl"
+              textClassName="text-4xl"
+            />
             <div className="text-center md:text-left">
               <h1 className="text-4xl font-black uppercase tracking-tight text-white md:text-5xl">{equipo.nombre}</h1>
               <div className="mt-4 flex flex-wrap justify-center gap-4 md:justify-start">
@@ -125,12 +131,15 @@ export default async function EquipoDetallePage({ params }: Props) {
                           </div>
 
                           {/* Escudo del Rival Agrandado (h-16 w-16) */}
-                          <div
-                            className="flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-full text-base font-black text-white shadow-md border-4 border-white transition-transform hover:scale-105"
-                            style={{ backgroundColor: rival?.colorPrimario || '#ccc' }}
-                          >
-                            {rival?.nombre.substring(0, 2).toUpperCase()}
-                          </div>
+                          {rival && (
+                            <TeamAvatar
+                              nombre={rival.nombre}
+                              colorPrimario={rival.colorPrimario}
+                              logo={rival.logo}
+                              className="h-16 w-16 border-4 border-white shadow-md transition-transform hover:scale-105"
+                              textClassName="text-base"
+                            />
+                          )}
                         </div>
                       </div>
                     )

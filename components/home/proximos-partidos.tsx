@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import { Calendar, Clock, MapPin } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { TeamAvatar } from '@/components/shared/team-avatar'
 import type { Partido, Equipo } from '@/lib/types'
 
 interface ProximosPartidosProps {
@@ -52,25 +53,27 @@ export function ProximosPartidos({ partidos, equipos, className }: ProximosParti
                   {/* Match */}
                   <div className="flex items-center justify-center gap-2 text-sm">
                     <div className="flex items-center gap-2">
-                      <div 
-                        className="flex h-7 w-7 shrink-0 items-center justify-center overflow-hidden rounded-full border border-slate-200 text-[10px] font-bold text-white shadow-sm"
-                        style={{ backgroundColor: equipoLocal.colorPrimario }}
-                      >
-                        {equipoLocal.nombre.substring(0, 2).toUpperCase()}
-                      </div>
+                      <TeamAvatar
+                        nombre={equipoLocal.nombre}
+                        colorPrimario={equipoLocal.colorPrimario}
+                        logo={equipoLocal.logo}
+                        className="h-7 w-7"
+                        textClassName="text-[10px]"
+                      />
                       <span className="font-semibold">{equipoLocal.nombre.split(' ')[0]}</span>
                     </div>
-                    
+
                     <span className="px-2 text-muted-foreground">VS</span>
-                    
+
                     <div className="flex items-center gap-2">
                       <span className="font-semibold">{equipoVisitante.nombre.split(' ')[0]}</span>
-                      <div 
-                        className="flex h-7 w-7 shrink-0 items-center justify-center overflow-hidden rounded-full border border-slate-200 text-[10px] font-bold text-white shadow-sm"
-                        style={{ backgroundColor: equipoVisitante.colorPrimario }}
-                      >
-                        {equipoVisitante.nombre.substring(0, 2).toUpperCase()}
-                      </div>
+                      <TeamAvatar
+                        nombre={equipoVisitante.nombre}
+                        colorPrimario={equipoVisitante.colorPrimario}
+                        logo={equipoVisitante.logo}
+                        className="h-7 w-7"
+                        textClassName="text-[10px]"
+                      />
                     </div>
                   </div>
                   

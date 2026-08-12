@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import { cn } from '@/lib/utils'
+import { TeamAvatar } from '@/components/shared/team-avatar'
 import type { Equipo } from '@/lib/types'
 
 interface EquipoCardProps {
@@ -17,9 +17,13 @@ export function EquipoCard({ equipo }: EquipoCardProps) {
         className="relative flex h-32 items-center justify-center"
         style={{ backgroundColor: `${equipo.colorPrimario}15` }}
       >
-        <div className="flex h-20 w-20 items-center justify-center overflow-hidden rounded-full text-xs font-bold text-white shadow-sm" style={{ backgroundColor: equipo.colorPrimario }}>
-          {equipo.nombre.substring(0, 2).toUpperCase()}
-        </div>
+        <TeamAvatar
+          nombre={equipo.nombre}
+          colorPrimario={equipo.colorPrimario}
+          logo={equipo.logo}
+          className="h-20 w-20"
+          textClassName="text-xs"
+        />
 
         {/* Color accent bar */}
         <div

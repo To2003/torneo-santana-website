@@ -1,4 +1,5 @@
 import { PartidoCard } from './partido-card'
+import { TeamAvatar } from '@/components/shared/team-avatar'
 import type { Partido, Equipo } from '@/lib/types'
 
 interface FechaSectionProps {
@@ -13,12 +14,13 @@ interface FechaSectionProps {
 function EquipoLibreCard({ equipo }: { equipo: Equipo }) {
   return (
     <div className="flex flex-col items-center justify-center gap-3 rounded-xl border border-dashed border-border bg-slate-50/60 p-6 text-center">
-      <div
-        className="flex h-16 w-16 items-center justify-center rounded-full text-xl font-bold text-white shadow-md"
-        style={{ backgroundColor: equipo.colorPrimario }}
-      >
-        {equipo.nombre.substring(0, 2).toUpperCase()}
-      </div>
+      <TeamAvatar
+        nombre={equipo.nombre}
+        colorPrimario={equipo.colorPrimario}
+        logo={equipo.logo}
+        className="h-16 w-16 shadow-md"
+        textClassName="text-xl"
+      />
       <div>
         <span className="block text-xs font-bold uppercase tracking-wider text-muted-foreground">Descansa esta fecha</span>
         <span className="block text-base font-bold text-slate-700">{equipo.nombre}</span>

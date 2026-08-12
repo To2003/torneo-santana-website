@@ -1,5 +1,5 @@
 import Papa from 'papaparse'
-import type { Equipo, Partido, ConfiguracionTorneo, HabilitacionTorneos, Posicion } from './types'
+import type { Equipo, Partido, ConfiguracionTorneo, HabilitacionTorneos, Posicion, InstagramPost } from './types'
 import { equiposMock, partidosMock, configuracionMock } from './mock-data'
 
 // Usamos tu ID de planilla. Asegurate de que esté Pública (Cualquier usuario con el vínculo -> Lector)
@@ -51,6 +51,28 @@ function normalizarNombre(valor: string): string {
     .replace(/[^a-z0-9]/g, '')
 }
 
+// Convierte un link para compartir de Google Drive (el que se copia con
+// "Compartir -> Cualquier usuario con el enlace") en una URL de imagen
+// directa que sirve para un <img src>. Si no reconoce el formato, devuelve
+// el link tal cual (por si ya es una URL de imagen de otro lado).
+function normalizarUrlImagen(valor: string, ancho = 800): string {
+  const url = limpiarTexto(valor || '')
+  if (!url) return ''
+
+  const patronesDrive = [
+    /\/file\/d\/([a-zA-Z0-9_-]+)/, // drive.google.com/file/d/ID/view
+    /\/d\/([a-zA-Z0-9_-]+)/,       // drive.google.com/d/ID
+    /[?&]id=([a-zA-Z0-9_-]+)/,     // drive.google.com/open?id=ID o uc?id=ID
+  ]
+
+  for (const patron of patronesDrive) {
+    const match = url.match(patron)
+    if (match) return `https://drive.google.com/thumbnail?id=${match[1]}&sz=w${ancho}`
+  }
+
+  return url
+}
+
 export async function getEquipos(): Promise<Equipo[]> {
   const data = await getSheetData('Equipos')
 
@@ -83,6 +105,9 @@ export async function getEquipos(): Promise<Equipo[]> {
       const copaDeOro = parseCheckbox(row[4])
       const playoff = parseCheckbox(row[5])
 
+      // Columna I: escudo del equipo (link de Drive u otra URL de imagen)
+      const logo = row[8] && row[8].trim() !== '' ? normalizarUrlImagen(row[8]) : undefined
+
       return {
         id: String(index + 1),
         nombre: nombre,
@@ -90,6 +115,7 @@ export async function getEquipos(): Promise<Equipo[]> {
         colorPrimario: colorPrimario, // Ahora usa el color del Sheets!
         jugadores: jugadores, // ¡Ahora el plantel tiene nombres!
         grupo,
+        logo,
         copaDeOro,
         playoff,
       }
@@ -321,4 +347,20 @@ export async function getEquipoBySlug(slug: string): Promise<Equipo | null> {
 export async function getPartidosEquipo(equipoId: string): Promise<Partido[]> {
   const partidos = await getTodosLosPartidos()
   return partidos.filter(p => p.equipoLocal === equipoId || p.equipoVisitante === equipoId)
+}
+
+// Lee la hoja "Instagram" para el carrusel de posteos de la home.
+// Columnas: A) Imagen (link de Drive) | B) Link al posteo/perfil | C) Texto (opcional)
+export async function getInstagramPosts(): Promise<InstagramPost[]> {
+  const data = await getSheetData('Instagram')
+  if (!data || data.length < 2) return []
+
+  return data.slice(1)
+    .filter(row => row[0] && row[0].trim() !== '')
+    .map((row, index) => ({
+      id: String(index + 1),
+      imagen: normalizarUrlImagen(row[0]),
+      link: row[1] && row[1].trim() !== '' ? limpiarTexto(row[1]) : 'https://instagram.com',
+      texto: row[2] && row[2].trim() !== '' ? limpiarTexto(row[2]) : undefined,
+    }))
 }
