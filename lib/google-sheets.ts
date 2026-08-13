@@ -51,6 +51,17 @@ function normalizarNombre(valor: string): string {
     .replace(/[^a-z0-9]/g, '')
 }
 
+// Genera un slug de URL 100% ASCII (sin tildes, ñ, ü, etc.) para evitar
+// problemas de codificación de caracteres en las rutas /equipos/[slug]
+function generarSlug(valor: string): string {
+  return limpiarTexto(valor)
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+}
+
 // Convierte un link para compartir de Google Drive (el que se copia con
 // "Compartir -> Cualquier usuario con el enlace") en una URL de imagen
 // directa que sirve para un <img src>. Si no reconoce el formato, devuelve
@@ -111,7 +122,7 @@ export async function getEquipos(): Promise<Equipo[]> {
       return {
         id: String(index + 1),
         nombre: nombre,
-        slug: nombre.toLowerCase().replace(/\s+/g, '-'),
+        slug: generarSlug(nombre),
         colorPrimario: colorPrimario, // Ahora usa el color del Sheets!
         jugadores: jugadores, // ¡Ahora el plantel tiene nombres!
         grupo,
@@ -347,6 +358,23 @@ export async function getEquipoBySlug(slug: string): Promise<Equipo | null> {
 export async function getPartidosEquipo(equipoId: string): Promise<Partido[]> {
   const partidos = await getTodosLosPartidos()
   return partidos.filter(p => p.equipoLocal === equipoId || p.equipoVisitante === equipoId)
+}
+
+// Cuenta cuántas veces salió MVP cada jugador del plantel, comparando el
+// texto libre de la columna MVP contra los nombres del plantel (tolerante
+// a mayúsculas, acentos y espacios, igual que la comparación de equipos)
+export function contarMvpsPorJugador(jugadores: string[], partidos: Partido[]): Record<string, number> {
+  const conteo: Record<string, number> = {}
+  jugadores.forEach(j => { conteo[j] = 0 })
+
+  partidos.forEach(partido => {
+    if (!partido.mvp) return
+    const mvpNormalizado = normalizarNombre(partido.mvp)
+    const jugador = jugadores.find(j => normalizarNombre(j) === mvpNormalizado)
+    if (jugador) conteo[jugador]++
+  })
+
+  return conteo
 }
 
 // Lee la hoja "Instagram" para el carrusel de posteos de la home.

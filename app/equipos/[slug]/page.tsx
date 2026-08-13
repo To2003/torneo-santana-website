@@ -1,7 +1,7 @@
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
-import { ArrowLeft, Instagram, MessageCircle, Users, Calendar } from 'lucide-react'
-import { getEquipoBySlug, getEquipos, getPartidosEquipo } from '@/lib/google-sheets'
+import { ArrowLeft, Instagram, MessageCircle, Users, Calendar, Star } from 'lucide-react'
+import { getEquipoBySlug, getEquipos, getPartidosEquipo, contarMvpsPorJugador } from '@/lib/google-sheets'
 import { TeamAvatar } from '@/components/shared/team-avatar'
 import type { Metadata } from 'next'
 
@@ -45,6 +45,7 @@ export default async function EquipoDetallePage({ params }: Props) {
 
   const puntosTotales = (ganados * 4) + (g2 * 2) + (perdidos * 1) + (p3 * 1)
   const getEquipoById = (id: string) => equipos.find(e => e.id === id)
+  const mvpsPorJugador = contarMvpsPorJugador(equipo.jugadores, partidosJugados)
 
   return (
     <div className="min-h-screen">
@@ -86,12 +87,25 @@ export default async function EquipoDetallePage({ params }: Props) {
               <h2 className="mb-4 flex items-center gap-2 text-xl font-bold text-[#1f4e78]"><Users className="h-6 w-6" /> Plantel ({equipo.jugadores.length} jugadores)</h2>
               {equipo.jugadores.length > 0 ? (
                 <div className="grid gap-2 sm:grid-cols-2">
-                  {equipo.jugadores.map((jugador, index) => (
-                    <div key={index} className="flex items-center gap-3 rounded-lg bg-slate-50 p-3 border border-slate-100">
-                      <div className="flex h-8 w-8 items-center justify-center rounded-full text-xs font-bold text-white shadow-sm" style={{ backgroundColor: equipo.colorPrimario }}>{index + 1}</div>
-                      <span className="font-medium text-slate-700">{jugador}</span>
-                    </div>
-                  ))}
+                  {equipo.jugadores.map((jugador, index) => {
+                    const mvps = mvpsPorJugador[jugador] || 0
+
+                    return (
+                      <div key={index} className="flex items-center gap-3 rounded-lg bg-slate-50 p-3 border border-slate-100">
+                        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-xs font-bold text-white shadow-sm" style={{ backgroundColor: equipo.colorPrimario }}>{index + 1}</div>
+                        <span className="flex-1 font-medium text-slate-700">{jugador}</span>
+                        {mvps > 0 && (
+                          <span
+                            className="flex shrink-0 items-center gap-1 rounded-full bg-amber-100 px-2 py-1 text-xs font-bold text-amber-700"
+                            title={`${mvps} vez${mvps > 1 ? 'ces' : ''} MVP`}
+                          >
+                            <Star className="h-3.5 w-3.5 fill-amber-500 text-amber-500" />
+                            {mvps > 1 && `x${mvps}`}
+                          </span>
+                        )}
+                      </div>
+                    )
+                  })}
                 </div>
               ) : (
                 <p className="text-muted-foreground text-sm italic">Lista de buena fe aún no cargada.</p>
