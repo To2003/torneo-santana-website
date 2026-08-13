@@ -16,5 +16,5 @@ export const configuracionMock: ConfiguracionTorneo = {
   ubicacion: 'Maestro Santana 335, B1642 BQH, Provincia de Buenos Aires',
   googleMapsUrl: 'https://maps.google.com/?q=Maestro+Santana+310,+B1642+BQH,+Provincia+de+Buenos+Aires',
   fechaInicio: '15 de Agosto 2026',
-  fechaFin: 'A confirmar'
+  fechaFin: 'Diciembre a confirmar'
 }
