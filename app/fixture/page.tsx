@@ -20,7 +20,18 @@ export default async function FixturePage() {
     return acc
   }, {} as Record<number, { partidos: typeof partidos, dia: string }>)
 
-  const fechas = Object.keys(partidosPorFecha).map(Number).sort((a, b) => a - b)
+  // Orden: la próxima fecha a jugar (la primera con resultados pendientes) va primero,
+  // seguida de las fechas ya jugadas de más reciente a más antigua, y por último las
+  // fechas futuras que todavía no llegaron (en orden cronológico)
+  const numerosFecha = Object.keys(partidosPorFecha).map(Number)
+  const fechaJugada = (n: number) => partidosPorFecha[n].partidos.every(p => p.jugado)
+
+  const jugadas = numerosFecha.filter(fechaJugada).sort((a, b) => b - a)
+  const noJugadas = numerosFecha.filter(n => !fechaJugada(n)).sort((a, b) => a - b)
+
+  const fechas = noJugadas.length > 0
+    ? [noJugadas[0], ...jugadas, ...noJugadas.slice(1)]
+    : jugadas
 
   // Equipo que descansa en cada fecha
   const equiposLibrePorFecha = Object.fromEntries(
@@ -44,7 +55,7 @@ export default async function FixturePage() {
       {/* Fixture */}
       <section className="bg-court py-12">
         <div className="relative mx-auto max-w-7xl space-y-8 px-4">
-          {fechas.map((numeroFecha) => {
+          {fechas.map((numeroFecha, index) => {
             const { partidos: partidosFecha, dia } = partidosPorFecha[numeroFecha]
 
             return (
@@ -56,6 +67,7 @@ export default async function FixturePage() {
                 equipos={equipos}
                 showResultados={true}
                 equipoLibre={equiposLibrePorFecha[numeroFecha]}
+                defaultExpanded={index < 2}
               />
             )
           })}

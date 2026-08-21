@@ -1,3 +1,8 @@
+'use client'
+
+import { useState } from 'react'
+import { ChevronDown } from 'lucide-react'
+import { cn } from '@/lib/utils'
 import { PartidoCard } from './partido-card'
 import { TeamAvatar } from '@/components/shared/team-avatar'
 import type { Partido, Equipo } from '@/lib/types'
@@ -9,6 +14,7 @@ interface FechaSectionProps {
   equipos: Equipo[]
   showResultados?: boolean
   equipoLibre?: Equipo | null
+  defaultExpanded?: boolean
 }
 
 function EquipoLibreCard({ equipo }: { equipo: Equipo }) {
@@ -29,7 +35,8 @@ function EquipoLibreCard({ equipo }: { equipo: Equipo }) {
   )
 }
 
-export function FechaSection({ fecha, dia, partidos, equipos, showResultados = false, equipoLibre }: FechaSectionProps) {
+export function FechaSection({ fecha, dia, partidos, equipos, showResultados = false, equipoLibre, defaultExpanded = true }: FechaSectionProps) {
+  const [expandido, setExpandido] = useState(defaultExpanded)
   const getEquipo = (id: string) => equipos.find(e => e.id === id)
 
   // Agrupar por dia
@@ -42,14 +49,22 @@ export function FechaSection({ fecha, dia, partidos, equipos, showResultados = f
 
   return (
     <div className="overflow-hidden rounded-xl border border-border bg-card shadow-lg">
-      {/* Header */}
-      <div className="bg-gradient-to-r from-torneo-primary to-torneo-primary-dark px-6 py-4">
-        <h3 className="text-center text-xl font-bold uppercase tracking-wider text-white">
+      {/* Header (clickeable para solapar/desplegar) */}
+      <button
+        type="button"
+        onClick={() => setExpandido((v) => !v)}
+        className="flex w-full items-center gap-4 bg-gradient-to-r from-torneo-primary to-torneo-primary-dark px-6 py-4 text-left"
+        aria-expanded={expandido}
+      >
+        <span className="h-5 w-5 shrink-0" />
+        <h3 className="flex-1 text-center text-xl font-bold uppercase tracking-wider text-white">
           Fecha {fecha}
         </h3>
-      </div>
+        <ChevronDown className={cn('h-5 w-5 shrink-0 text-white transition-transform', expandido && 'rotate-180')} />
+      </button>
 
       {/* Partidos agrupados por dia */}
+      {expandido && (
       <div className="divide-y divide-border">
         {Object.entries(partidosPorDia).map(([diaPartido, partidosDia], idxDia, dias) => {
           const esUltimoDia = idxDia === dias.length - 1
@@ -87,6 +102,7 @@ export function FechaSection({ fecha, dia, partidos, equipos, showResultados = f
           )
         })}
       </div>
+      )}
     </div>
   )
 }
