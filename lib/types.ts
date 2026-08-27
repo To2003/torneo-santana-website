@@ -28,6 +28,7 @@ export interface Partido {
   puntosVisitante?: number[]
   jugado: boolean
   mvp?: string
+  linkVideo?: string
 }
 
 export interface Posicion {

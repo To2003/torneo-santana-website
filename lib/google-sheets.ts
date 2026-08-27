@@ -172,7 +172,7 @@ export async function getPartidosFecha(numeroFecha: number, equipos: Equipo[]): 
   const partidos: Partido[] = []
 
   rows.forEach((row, index) => {
-    // Formato de 7 columnas: Horario | Local | Goles L | VS | Goles V | Visitante | MVP (Opcional)
+    // Formato: Horario | Local | Goles L | VS | Goles V | Visitante | MVP (Opcional) | Link Partido (Opcional)
     if (row.length < 6) return
 
     const horario = row[0]
@@ -182,6 +182,8 @@ export async function getPartidosFecha(numeroFecha: number, equipos: Equipo[]): 
     const nombreVisitante = row[5]
     const mvpRaw = row[6]
     const mvp = mvpRaw && mvpRaw.trim() !== "" ? mvpRaw.trim() : undefined
+    const linkVideoRaw = row[7]
+    const linkVideo = linkVideoRaw && linkVideoRaw.trim() !== "" ? limpiarTexto(linkVideoRaw) : undefined
 
     if (!nombreLocal || !nombreVisitante) return
     const localEsLibre = ['libre', 'queda'].includes(normalizarNombre(nombreLocal))
@@ -206,7 +208,8 @@ export async function getPartidosFecha(numeroFecha: number, equipos: Equipo[]): 
         setsLocal: jugado ? parseInt(resLocal) : undefined,
         setsVisitante: jugado ? parseInt(resVisitante) : undefined,
         jugado: jugado,
-        mvp: jugado ? mvp : undefined
+        mvp: jugado ? mvp : undefined,
+        linkVideo
       })
     }
   })
