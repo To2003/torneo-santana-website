@@ -294,17 +294,40 @@ export async function getResultados(): Promise<Partido[]> {
   return partidos.filter(p => p.jugado)
 }
 
+// Busca el nombre completo de un jugador a partir del texto libre de la
+// columna MVP (puede venir como nombre completo, apodo, o con "(Equipo)"
+// pegado al final). Busca primero entre los jugadores de los dos equipos del
+// partido y, si no encuentra nada ahí, en toda la Lista Buena Fe por las
+// dudas de que el equipo esté mal cargado. Si no matchea a nadie, devuelve
+// el texto tal cual vino de la hoja
+function resolverNombreMvp(mvpTexto: string, jugadoresBuenaFe: JugadorBuenaFe[], equipoIds: (string | undefined)[]): string {
+  const candidatosDelPartido = jugadoresBuenaFe.filter(j => equipoIds.includes(j.equipoId))
+  const match = candidatosDelPartido.find(j => coincideNombreJugador(mvpTexto, j.nombre, j.apodo))
+    || jugadoresBuenaFe.find(j => coincideNombreJugador(mvpTexto, j.nombre, j.apodo))
+
+  return match ? match.nombre : mvpTexto
+}
+
 export async function getUltimosMVPs(): Promise<Partido[]> {
   const partidos = await getResultados()
   const partidosConMvp = partidos.filter(p => p.mvp)
-  
+
   if (partidosConMvp.length === 0) return []
-  
+
   // Encontrar el número de fecha más alto que tenga al menos un MVP
   const ultimaFechaConMvp = Math.max(...partidosConMvp.map(p => p.fecha))
-  
-  // Filtrar y devolver solo los MVPs de esa fecha específica
-  return partidosConMvp.filter(p => p.fecha === ultimaFechaConMvp)
+
+  // Filtrar solo los MVPs de esa fecha específica
+  const mvpsUltimaFecha = partidosConMvp.filter(p => p.fecha === ultimaFechaConMvp)
+
+  // Si en la hoja pusieron un apodo (ej. "Juani"), mostramos el nombre
+  // completo del jugador según la Lista Buena Fe
+  const jugadoresBuenaFe = await getJugadoresBuenaFe()
+
+  return mvpsUltimaFecha.map(p => ({
+    ...p,
+    mvp: resolverNombreMvp(p.mvp as string, jugadoresBuenaFe, [p.equipoLocal, p.equipoVisitante])
+  }))
 }
 
 function calcularTabla(equipos: Equipo[], partidos: Partido[], sanciones: Sancion[] = []): Posicion[] {
