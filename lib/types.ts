@@ -79,3 +79,18 @@ export interface Sancion {
   jugador?: string // vacío si la sanción es al equipo entero
   fechasSuspension: number // 0 si no hay suspensión
 }
+
+export interface JugadorBuenaFe {
+  id: string
+  nombre: string
+  apodo?: string
+  equipoId?: string // id del equipo si se pudo matchear
+  equipoNombre: string // nombre a mostrar (el matcheado, o el crudo de la hoja si no matcheó)
+}
+
+export interface JugadorConEstadisticas {
+  nombre: string
+  apodo?: string
+  mvps: number
+  sanciones: number
+}

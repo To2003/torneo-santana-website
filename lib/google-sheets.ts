@@ -1,5 +1,5 @@
 import Papa from 'papaparse'
-import type { Equipo, Partido, ConfiguracionTorneo, HabilitacionTorneos, Posicion, InstagramPost, Sancion } from './types'
+import type { Equipo, Partido, ConfiguracionTorneo, HabilitacionTorneos, Posicion, InstagramPost, Sancion, JugadorBuenaFe, JugadorConEstadisticas } from './types'
 import { equiposMock, partidosMock, configuracionMock } from './mock-data'
 
 // Usamos tu ID de planilla. Asegurate de que esté Pública (Cualquier usuario con el vínculo -> Lector)
@@ -14,7 +14,11 @@ async function getSheetData(sheetName: string): Promise<string[][] | null> {
     const res = await fetch(url, { next: { revalidate: CACHE_REVALIDATE } })
     const text = await res.text()
 
-    // Si la hoja no existe, Google devuelve un HTML
+    // Si el spreadsheet entero no es accesible, Google devuelve HTML en vez de CSV.
+    // OJO: si el nombre de la PESTAÑA no existe, Google NO tira error acá -
+    // devuelve silenciosamente el contenido de la primera pestaña del archivo.
+    // Por eso funciones como getPartidosFecha validan además que el contenido
+    // recibido tenga la forma esperada (ver esHojaDeFechaValida)
     if (text.includes('<html')) return null
 
     // Parseamos el CSV
@@ -164,9 +168,21 @@ export async function getHabilitacionTorneos(): Promise<HabilitacionTorneos> {
   return habilitacion
 }
 
+// Verifica que los datos correspondan realmente a una hoja de fecha (empieza
+// con "Horario"). Protege contra pestañas cuyo nombre visible es "Fecha N"
+// pero tiene un carácter invisible pegado, lo que hace que Google Sheets
+// devuelva por error el contenido de otra hoja (típicamente "Equipos")
+function esHojaDeFechaValida(data: string[][] | null, numeroFecha: number): boolean {
+  const encabezado = (data?.[0]?.[0] || '').trim().toLowerCase()
+  if (encabezado === 'horario') return true
+
+  console.error(`[Fecha ${numeroFecha}] No se pudo leer "Fecha ${numeroFecha}" como hoja de partidos. O la pestaña todavía no existe, o -si ya la creaste- su nombre tiene un carácter invisible: probá renombrarla escribiendo "Fecha ${numeroFecha}" de cero (sin copiar/pegar).`)
+  return false
+}
+
 export async function getPartidosFecha(numeroFecha: number, equipos: Equipo[]): Promise<Partido[]> {
   const data = await getSheetData(`Fecha ${numeroFecha}`)
-  if (!data || data.length < 2) return []
+  if (!data || data.length < 2 || !esHojaDeFechaValida(data, numeroFecha)) return []
 
   const rows = data.slice(1)
   const partidos: Partido[] = []
@@ -217,7 +233,7 @@ export async function getPartidosFecha(numeroFecha: number, equipos: Equipo[]): 
 // Encuentra el equipo que descansa (fila "Queda / LIBRE") en una fecha dada
 export async function getEquipoLibre(numeroFecha: number, equipos: Equipo[]): Promise<Equipo | null> {
   const data = await getSheetData(`Fecha ${numeroFecha}`)
-  if (!data || data.length < 2) return null
+  if (!data || data.length < 2 || !esHojaDeFechaValida(data, numeroFecha)) return null
 
   const rows = data.slice(1)
 
@@ -246,7 +262,7 @@ export async function getEquipoLibre(numeroFecha: number, equipos: Equipo[]): Pr
 // no por partido). Toma el primer valor no vacío de la columna "Link Partido"
 export async function getLinkVideoFecha(numeroFecha: number): Promise<string | undefined> {
   const data = await getSheetData(`Fecha ${numeroFecha}`)
-  if (!data || data.length < 2) return undefined
+  if (!data || data.length < 2 || !esHojaDeFechaValida(data, numeroFecha)) return undefined
 
   for (const row of data.slice(1)) {
     const link = row[7]
@@ -393,21 +409,77 @@ export async function getPartidosEquipo(equipoId: string): Promise<Partido[]> {
   return partidos.filter(p => p.equipoLocal === equipoId || p.equipoVisitante === equipoId)
 }
 
-// Cuenta cuántas veces salió MVP cada jugador del plantel, comparando el
-// texto libre de la columna MVP contra los nombres del plantel (tolerante
-// a mayúsculas, acentos y espacios, igual que la comparación de equipos)
-export function contarMvpsPorJugador(jugadores: string[], partidos: Partido[]): Record<string, number> {
-  const conteo: Record<string, number> = {}
-  jugadores.forEach(j => { conteo[j] = 0 })
+// Compara un texto libre (ej. la columna MVP: "Lucas Zuñiga (San José)", o la
+// columna Jugador de Sanciones) contra el nombre completo y/o apodo de un
+// jugador. Tolerante a mayúsculas, acentos, espacios y a un "(equipo)" que
+// suele quedar pegado al final del texto libre
+function coincideNombreJugador(textoLibre: string, nombre: string, apodo?: string): boolean {
+  const limpio = normalizarNombre(textoLibre.replace(/\([^)]*\)\s*$/, ''))
+  if (!limpio) return false
+  if (limpio === normalizarNombre(nombre)) return true
+  if (apodo && limpio === normalizarNombre(apodo)) return true
+  return false
+}
 
-  partidos.forEach(partido => {
-    if (!partido.mvp) return
-    const mvpNormalizado = normalizarNombre(partido.mvp)
-    const jugador = jugadores.find(j => normalizarNombre(j) === mvpNormalizado)
-    if (jugador) conteo[jugador]++
-  })
+// Lee la hoja "Lista Buena Fe": el padrón de jugadores por equipo.
+// Columnas: A) Nombre Jugador | B) Apodo (opcional) | C) Nombre del Equipo
+// (las columnas MVPs/SANCIONES de esa hoja son solo referencia manual para
+// el organizador; el sitio las calcula solo, no las lee)
+export async function getJugadoresBuenaFe(): Promise<JugadorBuenaFe[]> {
+  const [data, equipos] = await Promise.all([
+    getSheetData('Lista Buena Fe'),
+    getEquipos()
+  ])
+  if (!data || data.length < 2) return []
 
-  return conteo
+  return data.slice(1)
+    .filter(row => row[0] && row[0].trim() !== '')
+    .map((row, index) => {
+      const nombre = limpiarTexto(row[0])
+      const apodoRaw = limpiarTexto(row[1] || '')
+      const equipoNombreRaw = limpiarTexto(row[2] || '')
+
+      const equipoMatch = equipos.find(e => normalizarNombre(e.nombre) === normalizarNombre(equipoNombreRaw))
+      if (equipoNombreRaw && !equipoMatch) {
+        console.error(`[Lista Buena Fe] No se encontró el equipo "${equipoNombreRaw}" para el jugador "${nombre}" (fila ${index + 2})`)
+      }
+
+      return {
+        id: String(index + 1),
+        nombre,
+        apodo: apodoRaw !== '' ? apodoRaw : undefined,
+        equipoId: equipoMatch?.id,
+        equipoNombre: equipoMatch ? equipoMatch.nombre : equipoNombreRaw
+      }
+    })
+}
+
+// Arma el plantel de un equipo con la cantidad de MVPs y sanciones de cada
+// jugador. Usa la "Lista Buena Fe" cuando el equipo ya está cargado ahí;
+// si todavía no lo está, cae de vuelta a la lista de texto libre de la
+// columna "Jugadores" de la hoja Equipos (sin apodo, matcheo solo por nombre)
+export async function getPlantelConEstadisticas(equipo: Equipo): Promise<JugadorConEstadisticas[]> {
+  const [jugadoresBuenaFe, partidosEquipo, sanciones] = await Promise.all([
+    getJugadoresBuenaFe(),
+    getPartidosEquipo(equipo.id),
+    getSanciones()
+  ])
+
+  const jugadoresDelEquipo = jugadoresBuenaFe.filter(j => j.equipoId === equipo.id)
+
+  const jugadores: { nombre: string; apodo?: string }[] = jugadoresDelEquipo.length > 0
+    ? jugadoresDelEquipo.map(j => ({ nombre: j.nombre, apodo: j.apodo }))
+    : equipo.jugadores.map(nombre => ({ nombre }))
+
+  const mvpsDelEquipo = partidosEquipo.filter(p => p.jugado && p.mvp).map(p => p.mvp as string)
+  const sancionesDelEquipo = sanciones.filter(s => s.equipoId === equipo.id && s.jugador)
+
+  return jugadores.map(({ nombre, apodo }) => ({
+    nombre,
+    apodo,
+    mvps: mvpsDelEquipo.filter(mvp => coincideNombreJugador(mvp, nombre, apodo)).length,
+    sanciones: sancionesDelEquipo.filter(s => coincideNombreJugador(s.jugador as string, nombre, apodo)).length
+  }))
 }
 
 // Lee la hoja "Instagram" para el carrusel de posteos de la home.

@@ -1,7 +1,7 @@
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
-import { ArrowLeft, Instagram, MessageCircle, Users, Calendar, Star } from 'lucide-react'
-import { getEquipoBySlug, getEquipos, getPartidosEquipo, contarMvpsPorJugador } from '@/lib/google-sheets'
+import { ArrowLeft, Instagram, MessageCircle, Users, Calendar, Star, AlertTriangle } from 'lucide-react'
+import { getEquipoBySlug, getEquipos, getPartidosEquipo, getPlantelConEstadisticas } from '@/lib/google-sheets'
 import { TeamAvatar } from '@/components/shared/team-avatar'
 import type { Metadata } from 'next'
 
@@ -45,7 +45,7 @@ export default async function EquipoDetallePage({ params }: Props) {
 
   const puntosTotales = (ganados * 4) + (g2 * 2) + (perdidos * 1) + (p3 * 1)
   const getEquipoById = (id: string) => equipos.find(e => e.id === id)
-  const mvpsPorJugador = contarMvpsPorJugador(equipo.jugadores, partidosJugados)
+  const plantel = await getPlantelConEstadisticas(equipo)
 
   return (
     <div className="min-h-screen">
@@ -84,28 +84,35 @@ export default async function EquipoDetallePage({ params }: Props) {
 
             {/* Jugadores */}
             <div className="rounded-xl border border-border bg-card p-6 shadow-lg h-full">
-              <h2 className="mb-4 flex items-center gap-2 text-xl font-bold text-[#1f4e78]"><Users className="h-6 w-6" /> Plantel ({equipo.jugadores.length} jugadores)</h2>
-              {equipo.jugadores.length > 0 ? (
+              <h2 className="mb-4 flex items-center gap-2 text-xl font-bold text-[#1f4e78]"><Users className="h-6 w-6" /> Plantel ({plantel.length} jugadores)</h2>
+              {plantel.length > 0 ? (
                 <div className="grid gap-2 sm:grid-cols-2">
-                  {equipo.jugadores.map((jugador, index) => {
-                    const mvps = mvpsPorJugador[jugador] || 0
-
-                    return (
-                      <div key={index} className="flex items-center gap-3 rounded-lg bg-slate-50 p-3 border border-slate-100">
-                        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-xs font-bold text-white shadow-sm" style={{ backgroundColor: equipo.colorPrimario }}>{index + 1}</div>
-                        <span className="flex-1 font-medium text-slate-700">{jugador}</span>
-                        {mvps > 0 && (
+                  {plantel.map((jugador, index) => (
+                    <div key={index} className="flex items-center gap-3 rounded-lg bg-slate-50 p-3 border border-slate-100">
+                      <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-xs font-bold text-white shadow-sm" style={{ backgroundColor: equipo.colorPrimario }}>{index + 1}</div>
+                      <span className="flex-1 truncate font-medium text-slate-700">{jugador.apodo || jugador.nombre}</span>
+                      <div className="flex shrink-0 items-center gap-1">
+                        {jugador.mvps > 0 && (
                           <span
                             className="flex shrink-0 items-center gap-1 rounded-full bg-amber-100 px-2 py-1 text-xs font-bold text-amber-700"
-                            title={`${mvps} vez${mvps > 1 ? 'ces' : ''} MVP`}
+                            title={`${jugador.mvps} vez${jugador.mvps > 1 ? 'ces' : ''} MVP`}
                           >
                             <Star className="h-3.5 w-3.5 fill-amber-500 text-amber-500" />
-                            {mvps > 1 && `x${mvps}`}
+                            {jugador.mvps > 1 && `x${jugador.mvps}`}
+                          </span>
+                        )}
+                        {jugador.sanciones > 0 && (
+                          <span
+                            className="flex shrink-0 items-center gap-1 rounded-full bg-red-100 px-2 py-1 text-xs font-bold text-red-700"
+                            title={`${jugador.sanciones} sanción${jugador.sanciones > 1 ? 'es' : ''}`}
+                          >
+                            <AlertTriangle className="h-3.5 w-3.5" />
+                            {jugador.sanciones > 1 && `x${jugador.sanciones}`}
                           </span>
                         )}
                       </div>
-                    )
-                  })}
+                    </div>
+                  ))}
                 </div>
               ) : (
                 <p className="text-muted-foreground text-sm italic">Lista de buena fe aún no cargada.</p>
