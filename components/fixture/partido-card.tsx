@@ -1,7 +1,6 @@
 import { Clock, MapPin } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { TeamAvatar } from '@/components/shared/team-avatar'
-import { VideoPartidoButton } from './video-partido-button'
 import type { Partido, Equipo } from '@/lib/types'
 
 interface PartidoCardProps {
@@ -83,8 +82,6 @@ export function PartidoCard({ partido, equipoLocal, equipoVisitante, showResulta
           </div>
 
         </div>
-
-        {partido.linkVideo && <VideoPartidoButton link={partido.linkVideo} />}
       </div>
     </div>
   )

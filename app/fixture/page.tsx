@@ -1,5 +1,5 @@
 import { FechaSection } from '@/components/fixture/fecha-section'
-import { getTodosLosPartidos, getEquipos, getEquipoLibre } from '@/lib/google-sheets'
+import { getTodosLosPartidos, getEquipos, getEquipoLibre, getLinkVideoFecha } from '@/lib/google-sheets'
 
 export const metadata = {
   title: 'Fixture | Torneo Santana',
@@ -38,6 +38,11 @@ export default async function FixturePage() {
     await Promise.all(fechas.map(async (f) => [f, await getEquipoLibre(f, equipos)] as const))
   )
 
+  // Link al video de cada fecha (uno solo por fecha, no por partido)
+  const linksVideoPorFecha = Object.fromEntries(
+    await Promise.all(fechas.map(async (f) => [f, await getLinkVideoFecha(f)] as const))
+  )
+
   return (
     <div className="min-h-screen">
       {/* Header */}
@@ -68,6 +73,7 @@ export default async function FixturePage() {
                 showResultados={true}
                 equipoLibre={equiposLibrePorFecha[numeroFecha]}
                 defaultExpanded={index < 2}
+                linkVideo={linksVideoPorFecha[numeroFecha]}
               />
             )
           })}

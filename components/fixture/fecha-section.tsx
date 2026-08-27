@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { ChevronDown } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { PartidoCard } from './partido-card'
+import { VideoPartidoButton } from './video-partido-button'
 import { TeamAvatar } from '@/components/shared/team-avatar'
 import type { Partido, Equipo } from '@/lib/types'
 
@@ -15,6 +16,7 @@ interface FechaSectionProps {
   showResultados?: boolean
   equipoLibre?: Equipo | null
   defaultExpanded?: boolean
+  linkVideo?: string
 }
 
 function EquipoLibreCard({ equipo }: { equipo: Equipo }) {
@@ -35,7 +37,7 @@ function EquipoLibreCard({ equipo }: { equipo: Equipo }) {
   )
 }
 
-export function FechaSection({ fecha, dia, partidos, equipos, showResultados = false, equipoLibre, defaultExpanded = true }: FechaSectionProps) {
+export function FechaSection({ fecha, dia, partidos, equipos, showResultados = false, equipoLibre, defaultExpanded = true, linkVideo }: FechaSectionProps) {
   const [expandido, setExpandido] = useState(defaultExpanded)
   const getEquipo = (id: string) => equipos.find(e => e.id === id)
 
@@ -102,6 +104,12 @@ export function FechaSection({ fecha, dia, partidos, equipos, showResultados = f
           )
         })}
       </div>
+      )}
+
+      {expandido && linkVideo && (
+        <div className="border-t border-border p-4">
+          <VideoPartidoButton link={linkVideo} label={`Ver video de la Fecha ${fecha}`} />
+        </div>
       )}
     </div>
   )

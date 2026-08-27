@@ -182,8 +182,6 @@ export async function getPartidosFecha(numeroFecha: number, equipos: Equipo[]): 
     const nombreVisitante = row[5]
     const mvpRaw = row[6]
     const mvp = mvpRaw && mvpRaw.trim() !== "" ? mvpRaw.trim() : undefined
-    const linkVideoRaw = row[7]
-    const linkVideo = linkVideoRaw && linkVideoRaw.trim() !== "" ? limpiarTexto(linkVideoRaw) : undefined
 
     if (!nombreLocal || !nombreVisitante) return
     const localEsLibre = ['libre', 'queda'].includes(normalizarNombre(nombreLocal))
@@ -208,8 +206,7 @@ export async function getPartidosFecha(numeroFecha: number, equipos: Equipo[]): 
         setsLocal: jugado ? parseInt(resLocal) : undefined,
         setsVisitante: jugado ? parseInt(resVisitante) : undefined,
         jugado: jugado,
-        mvp: jugado ? mvp : undefined,
-        linkVideo
+        mvp: jugado ? mvp : undefined
       })
     }
   })
@@ -243,6 +240,20 @@ export async function getEquipoLibre(numeroFecha: number, equipos: Equipo[]): Pr
   }
 
   return null
+}
+
+// Link al video de la fecha completa (una transmisión/grabación por fecha,
+// no por partido). Toma el primer valor no vacío de la columna "Link Partido"
+export async function getLinkVideoFecha(numeroFecha: number): Promise<string | undefined> {
+  const data = await getSheetData(`Fecha ${numeroFecha}`)
+  if (!data || data.length < 2) return undefined
+
+  for (const row of data.slice(1)) {
+    const link = row[7]
+    if (link && link.trim() !== '') return limpiarTexto(link)
+  }
+
+  return undefined
 }
 
 export async function getTodosLosPartidos(): Promise<Partido[]> {
