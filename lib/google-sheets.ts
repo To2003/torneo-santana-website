@@ -1,5 +1,5 @@
 import Papa from 'papaparse'
-import type { Equipo, Partido, ConfiguracionTorneo, HabilitacionTorneos, Posicion, InstagramPost } from './types'
+import type { Equipo, Partido, ConfiguracionTorneo, HabilitacionTorneos, Posicion, InstagramPost, Sancion } from './types'
 import { equiposMock, partidosMock, configuracionMock } from './mock-data'
 
 // Usamos tu ID de planilla. Asegurate de que esté Pública (Cualquier usuario con el vínculo -> Lector)
@@ -33,6 +33,13 @@ function parseCheckbox(valor?: string): boolean {
   if (!valor) return false
   const v = valor.trim().toUpperCase()
   return v === 'TRUE' || v === 'VERDADERO' || v === '1'
+}
+
+// Interpreta un número entero de Sheets tolerando vacíos, espacios y texto no numérico
+function parseNumero(valor?: string): number {
+  if (!valor) return 0
+  const n = parseInt(valor.trim(), 10)
+  return Number.isFinite(n) && n > 0 ? n : 0
 }
 
 // Quita caracteres invisibles que suelen colarse al pegar texto en Sheets
@@ -270,7 +277,7 @@ export async function getUltimosMVPs(): Promise<Partido[]> {
   return partidosConMvp.filter(p => p.fecha === ultimaFechaConMvp)
 }
 
-function calcularTabla(equipos: Equipo[], partidos: Partido[]): Posicion[] {
+function calcularTabla(equipos: Equipo[], partidos: Partido[], sanciones: Sancion[] = []): Posicion[] {
   const posiciones = equipos.map(equipo => {
     // Filtrar los partidos que este equipo ya jugó
     const partidosEquipo = partidos.filter(p =>
@@ -297,7 +304,12 @@ function calcularTabla(equipos: Equipo[], partidos: Partido[]): Posicion[] {
     })
 
     // Cálculo matemático de los puntos del reglamento
-    const pts = (pg * 4) + (g2 * 2) + (pp * 1) + (p3 * 1)
+    const ptsBase = (pg * 4) + (g2 * 2) + (pp * 1) + (p3 * 1)
+
+    // Se descuentan los puntos de las sanciones que le corresponden a este equipo
+    const puntosDescontados = sanciones
+      .filter(s => s.equipoId === equipo.id)
+      .reduce((total, s) => total + s.puntos, 0)
 
     return {
       equipo,
@@ -307,7 +319,8 @@ function calcularTabla(equipos: Equipo[], partidos: Partido[]): Posicion[] {
       pp,
       g2,
       p3,
-      pts
+      pts: ptsBase - puntosDescontados,
+      puntosDescontados
     }
   })
 
@@ -328,18 +341,24 @@ function calcularTabla(equipos: Equipo[], partidos: Partido[]): Posicion[] {
 
 // Tabla de posiciones de la temporada regular, filtrada por zona (Zona 1 / Zona 2)
 export async function getTablaPosicionesPorGrupo(grupo: '1' | '2'): Promise<Posicion[]> {
-  const equipos = await getEquipos()
-  const partidos = await getTodosLosPartidos()
+  const [equipos, partidos, sanciones] = await Promise.all([
+    getEquipos(),
+    getTodosLosPartidos(),
+    getSanciones()
+  ])
   const equiposDelGrupo = equipos.filter(e => e.grupo === grupo)
-  return calcularTabla(equiposDelGrupo, partidos)
+  return calcularTabla(equiposDelGrupo, partidos, sanciones)
 }
 
 // Tabla de posiciones filtrada a los equipos de un torneo/instancia específica.
 // Copa de ORO: tildados en la columna E. Copa de PLATA: los que no lo están.
 // Playoff: por ahora solo entran los tildados en la columna F.
 export async function getTablaPosicionesPorTorneo(torneo: 'copaDeOro' | 'copaDePlata' | 'playoff'): Promise<Posicion[]> {
-  const equipos = await getEquipos()
-  const partidos = await getTodosLosPartidos()
+  const [equipos, partidos, sanciones] = await Promise.all([
+    getEquipos(),
+    getTodosLosPartidos(),
+    getSanciones()
+  ])
 
   const equiposClasificados = equipos.filter(e => {
     if (torneo === 'copaDeOro') return e.copaDeOro
@@ -347,7 +366,7 @@ export async function getTablaPosicionesPorTorneo(torneo: 'copaDeOro' | 'copaDeP
     return e.playoff
   })
 
-  return calcularTabla(equiposClasificados, partidos)
+  return calcularTabla(equiposClasificados, partidos, sanciones)
 }
 
 export async function getEquipoBySlug(slug: string): Promise<Equipo | null> {
@@ -396,4 +415,50 @@ export async function getInstagramPosts(): Promise<InstagramPost[]> {
       link: row[2] && row[2].trim() !== '' ? limpiarTexto(row[2]) : 'https://instagram.com',
       texto: row[3] && row[3].trim() !== '' ? limpiarTexto(row[3]) : undefined,
     }))
+}
+
+// Lee la hoja "Sanciones". Columnas: A) Equipo | B) Causa Sancion | C) Puntos
+// | D) Jugador (opcional) | E) Fechas Suspencion
+// Devuelve la más reciente primero (última fila del sheet primero) e ignora
+// las filas sin ningún efecto real (sin puntos y sin fechas de suspensión)
+export async function getSanciones(): Promise<Sancion[]> {
+  const [data, equipos] = await Promise.all([
+    getSheetData('Sanciones'),
+    getEquipos()
+  ])
+
+  if (!data || data.length < 2) return []
+
+  const sanciones = data.slice(1)
+    .map((row, index): Sancion | null => {
+      const equipoNombreRaw = limpiarTexto(row[0] || '')
+      if (!equipoNombreRaw) return null
+
+      const puntos = parseNumero(row[2])
+      const fechasSuspension = parseNumero(row[4])
+
+      // Sin puntos ni fechas de suspensión no tiene ningún efecto: se ignora
+      if (puntos === 0 && fechasSuspension === 0) return null
+
+      const equipoMatch = equipos.find(e => normalizarNombre(e.nombre) === normalizarNombre(equipoNombreRaw))
+      if (!equipoMatch) {
+        console.error(`[Sanciones] No se encontró un equipo que matchee "${equipoNombreRaw}" (fila ${index + 2} de la hoja Sanciones)`)
+      }
+
+      const jugadorRaw = limpiarTexto(row[3] || '')
+
+      return {
+        id: String(index + 1),
+        equipoNombre: equipoMatch ? equipoMatch.nombre : equipoNombreRaw,
+        equipoId: equipoMatch?.id,
+        causa: limpiarTexto(row[1] || ''),
+        puntos,
+        jugador: jugadorRaw !== '' ? jugadorRaw : undefined,
+        fechasSuspension
+      }
+    })
+    .filter((s): s is Sancion => s !== null)
+
+  // Más reciente primero: la última fila cargada en el sheet va arriba
+  return sanciones.reverse()
 }

@@ -38,7 +38,8 @@ export interface Posicion {
   pp: number // Partidos perdidos
   g2: number // Bonus ganados en 2 sets
   p3: number // Bonus perdidos en 3 sets
-  pts: number // Puntos totales
+  pts: number // Puntos totales (ya con sanciones descontadas)
+  puntosDescontados: number // Suma de puntos restados por sanciones
 }
 
 export interface ConfiguracionTorneo {
@@ -67,4 +68,14 @@ export interface InstagramPost {
   imagen: string
   link: string
   texto?: string
+}
+
+export interface Sancion {
+  id: string
+  equipoNombre: string // nombre a mostrar (el del equipo matcheado, o el crudo de la hoja si no matcheó)
+  equipoId?: string // id del equipo si se pudo matchear
+  causa: string
+  puntos: number // 0 si la sanción no descuenta puntos
+  jugador?: string // vacío si la sanción es al equipo entero
+  fechasSuspension: number // 0 si no hay suspensión
 }

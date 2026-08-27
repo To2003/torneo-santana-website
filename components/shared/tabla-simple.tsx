@@ -4,6 +4,8 @@ import { TeamAvatar } from '@/components/shared/team-avatar'
 import type { Posicion } from '@/lib/types'
 
 export function TablaSimple({ titulo, posiciones }: { titulo: string; posiciones: Posicion[] }) {
+  const sancionados = posiciones.filter(p => p.puntosDescontados > 0)
+
   return (
     <div className="overflow-hidden rounded-xl border border-border bg-card shadow-lg">
       <div className="bg-[#1f4e78] px-4 py-3">
@@ -50,7 +52,10 @@ export function TablaSimple({ titulo, posiciones }: { titulo: string; posiciones
                           className="h-9 w-9"
                           textClassName="text-xs"
                         />
-                        <span className="font-bold text-slate-700 whitespace-nowrap">{pos.equipo.nombre}</span>
+                        <span className="font-bold text-slate-700 whitespace-nowrap">
+                          {pos.equipo.nombre}
+                          {pos.puntosDescontados > 0 && <span className="text-red-500"> (*)</span>}
+                        </span>
                       </div>
                     </td>
 
@@ -69,6 +74,16 @@ export function TablaSimple({ titulo, posiciones }: { titulo: string; posiciones
               })}
             </tbody>
           </table>
+        </div>
+      )}
+
+      {sancionados.length > 0 && (
+        <div className="space-y-1 border-t border-border bg-slate-50/50 px-4 py-3">
+          {sancionados.map(pos => (
+            <p key={pos.equipo.id} className="text-xs text-red-500">
+              (*) {pos.equipo.nombre}: se descontaron {pos.puntosDescontados} {pos.puntosDescontados === 1 ? 'punto' : 'puntos'}
+            </p>
+          ))}
         </div>
       )}
     </div>

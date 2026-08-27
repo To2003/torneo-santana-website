@@ -1,6 +1,7 @@
 import { Hero } from '@/components/home/hero'
 import { TablaPosiciones } from '@/components/home/tabla-posiciones'
 import { UltimosMVPs } from '@/components/home/ultimos-mvps'
+import { SancionesCard } from '@/components/home/sanciones-card'
 import { InfoTorneo } from '@/components/home/info-torneo'
 import { InstagramCarousel } from '@/components/home/instagram-carousel'
 import {
@@ -8,7 +9,8 @@ import {
   getTablaPosicionesPorGrupo,
   getUltimosMVPs,
   getEquipos,
-  getInstagramPosts
+  getInstagramPosts,
+  getSanciones
 } from '@/lib/google-sheets'
 
 // Datos de respaldo oficiales por si el Sheets falla, viene vacío o está desactualizado
@@ -29,13 +31,14 @@ const configRespaldo = {
 }
 
 export default async function HomePage() {
-  const [configSheet, posicionesTorneoA, posicionesTorneoB, ultimosMVPs, equipos, instagramPosts] = await Promise.all([
+  const [configSheet, posicionesTorneoA, posicionesTorneoB, ultimosMVPs, equipos, instagramPosts, sanciones] = await Promise.all([
     getConfiguracion(),
     getTablaPosicionesPorGrupo('1'),
     getTablaPosicionesPorGrupo('2'),
     getUltimosMVPs(),
     getEquipos(),
-    getInstagramPosts()
+    getInstagramPosts(),
+    getSanciones()
   ])
 
   // LÓGICA DE SEGURIDAD: Si el Sheets viene vacío o sin reglas, inyectamos el respaldo oficial
@@ -69,12 +72,13 @@ export default async function HomePage() {
               />
             </div>
 
-            {/* Sidebar - Ultimos MVPs */}
-            <div className="min-w-0 lg:col-span-1">
+            {/* Sidebar - Ultimos MVPs y Sanciones */}
+            <div className="min-w-0 space-y-6 lg:col-span-1">
               <UltimosMVPs
                 partidos={ultimosMVPs}
                 equipos={equipos}
               />
+              <SancionesCard sanciones={sanciones} />
             </div>
           </div>
         </div>
