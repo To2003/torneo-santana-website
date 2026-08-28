@@ -9,7 +9,12 @@ const CACHE_REVALIDATE = 20 // 20 segundos de caché
 // Función para leer la hoja pública en formato CSV
 async function getSheetData(sheetName: string): Promise<string[][] | null> {
   try {
-    const url = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(sheetName)}`
+    // headers=1 fuerza a Google a tratar solo la fila 1 como encabezado. Sin
+    // esto, si una columna viene vacía en las primeras filas de datos (ej.
+    // "Numero" sin completar), Google intenta "adivinar" cuántas filas son
+    // encabezado y puede tragarse esas filas enteras, fusionándolas con el
+    // título en vez de devolverlas como datos
+    const url = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(sheetName)}&headers=1`
 
     const res = await fetch(url, { next: { revalidate: CACHE_REVALIDATE } })
     const text = await res.text()
