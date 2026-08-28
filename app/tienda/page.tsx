@@ -28,25 +28,29 @@ export default async function TiendaPage() {
       </section>
 
       {/* Productos */}
-      <section className="bg-court py-12">
-        <div className="relative mx-auto max-w-7xl px-4">
-          {!tiendaAbierta ? (
-            <div className="mx-auto flex max-w-md flex-col items-center gap-3 rounded-xl border border-border bg-card p-10 text-center shadow-lg">
-              <ShoppingBag className="h-10 w-10 text-muted-foreground/40" />
-              <h2 className="text-lg font-bold text-foreground">Tienda cerrada temporalmente</h2>
-              <p className="text-sm text-muted-foreground">
-                Estamos actualizando la tienda. Volvé a pasar en un rato.
-              </p>
-            </div>
-          ) : productos.length === 0 ? (
-            <p className="text-center italic text-muted-foreground">
-              Todavía no hay productos cargados.
+      {!tiendaAbierta ? (
+        <section className="flex min-h-[60vh] items-center justify-center bg-court px-4 py-12">
+          <div className="mx-auto flex max-w-md flex-col items-center gap-3 rounded-xl border border-border bg-card p-10 text-center shadow-lg">
+            <ShoppingBag className="h-10 w-10 text-muted-foreground/40" />
+            <h2 className="text-lg font-bold text-foreground">Tienda cerrada temporalmente</h2>
+            <p className="text-sm text-muted-foreground">
+              Estamos actualizando la tienda. Volvé a pasar en un rato.
             </p>
-          ) : (
-            <TiendaCatalogo productos={productos} />
-          )}
-        </div>
-      </section>
+          </div>
+        </section>
+      ) : (
+        <section className="bg-court py-12">
+          <div className="relative mx-auto max-w-7xl px-4">
+            {productos.length === 0 ? (
+              <p className="text-center italic text-muted-foreground">
+                Todavía no hay productos cargados.
+              </p>
+            ) : (
+              <TiendaCatalogo productos={productos} />
+            )}
+          </div>
+        </section>
+      )}
     </div>
   )
 }
