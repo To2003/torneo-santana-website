@@ -112,30 +112,30 @@ export async function getEquipos(): Promise<Equipo[]> {
       // Extraemos las nuevas columnas (si están vacías, usamos valores por defecto)
       const nombre = limpiarTexto(row[0])
 
-      // Separamos la lista de jugadores por coma y quitamos espacios extra
-      const jugadoresRaw = row[2] ? row[2].split(',') : []
-      const jugadores = jugadoresRaw.map(j => j.trim()).filter(j => j !== "")
+      // El plantel de jugadores ahora vive en la hoja "Lista Buena Fe"
+      // (ver getJugadoresBuenaFe / getPlantelConEstadisticas)
+      const jugadores: string[] = []
 
       // Usamos el color de la hoja si existe, sino usamos el fallback
-      const colorPrimario = row[3] && row[3].trim() !== "" ? row[3].trim() : coloresFallback[index % coloresFallback.length]
+      const colorPrimario = row[2] && row[2].trim() !== "" ? row[2].trim() : coloresFallback[index % coloresFallback.length]
 
       // Columna B: zona de la temporada regular (Zona 1 / Zona 2)
       const grupoRaw = (row[1] || '').trim()
       const grupo: '1' | '2' = grupoRaw === '2' ? '2' : '1'
 
-      // Columna E: escudo del equipo (link de Drive u otra URL de imagen)
-      const logo = row[4] && row[4].trim() !== '' ? normalizarUrlImagen(row[4]) : undefined
+      // Columna D: escudo del equipo (link de Drive u otra URL de imagen)
+      const logo = row[3] && row[3].trim() !== '' ? normalizarUrlImagen(row[3]) : undefined
 
-      // Columna F: clasificado a Copa de Oro/Plata | Columna G: clasificado a Playoff
-      const copaDeOro = parseCheckbox(row[5])
-      const playoff = parseCheckbox(row[6])
+      // Columna E: clasificado a Copa de Oro/Plata | Columna F: clasificado a Playoff
+      const copaDeOro = parseCheckbox(row[4])
+      const playoff = parseCheckbox(row[5])
 
       return {
         id: String(index + 1),
         nombre: nombre,
         slug: generarSlug(nombre),
         colorPrimario: colorPrimario, // Ahora usa el color del Sheets!
-        jugadores: jugadores, // ¡Ahora el plantel tiene nombres!
+        jugadores: jugadores,
         grupo,
         logo,
         copaDeOro,
@@ -148,7 +148,7 @@ export async function getConfiguracion(): Promise<ConfiguracionTorneo> {
   return configuracionMock // Mantenemos el mock para la config por ahora
 }
 
-// Lee las columnas G/H de la hoja "Equipos", donde se habilita/deshabilita
+// Lee las columnas F/G de la hoja "Equipos", donde se habilita/deshabilita
 // la visibilidad pública de cada torneo (Copa de Oro/Plata y Playoff)
 export async function getHabilitacionTorneos(): Promise<HabilitacionTorneos> {
   const data = await getSheetData('Equipos')
@@ -157,10 +157,10 @@ export async function getHabilitacionTorneos(): Promise<HabilitacionTorneos> {
   if (!data || data.length < 2) return habilitacion
 
   data.slice(1).forEach(row => {
-    const etiqueta = (row[7] || '').trim().toUpperCase()
+    const etiqueta = (row[6] || '').trim().toUpperCase()
     if (!etiqueta) return
 
-    const habilitado = parseCheckbox(row[8])
+    const habilitado = parseCheckbox(row[7])
     if (etiqueta.includes('PLAYOFF')) habilitacion.playoff = habilitado
     else if (etiqueta.includes('COPA')) habilitacion.copaDeOro = habilitado
   })
@@ -460,7 +460,8 @@ export async function getJugadoresBuenaFe(): Promise<JugadorBuenaFe[]> {
     .map((row, index) => {
       const nombre = limpiarTexto(row[0])
       const apodoRaw = limpiarTexto(row[1] || '')
-      const equipoNombreRaw = limpiarTexto(row[2] || '')
+      // Columna C es el número de camiseta (no la usamos); el equipo está en D
+      const equipoNombreRaw = limpiarTexto(row[3] || '')
 
       const equipoMatch = equipos.find(e => normalizarNombre(e.nombre) === normalizarNombre(equipoNombreRaw))
       if (equipoNombreRaw && !equipoMatch) {
