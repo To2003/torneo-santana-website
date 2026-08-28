@@ -5,11 +5,13 @@ import { usePathname } from 'next/navigation'
 import { cn } from '@/lib/utils'
 import { useState } from 'react'
 import { Menu, X } from 'lucide-react'
+import { CarritoBoton } from '@/components/tienda/carrito-boton'
 
 const navItems = [
   { href: '/', label: 'Inicio' },
   { href: '/equipos', label: 'Equipos' },
-  { href: '/fixture', label: 'Fixture' }
+  { href: '/fixture', label: 'Fixture' },
+  { href: '/tienda', label: 'Tienda' }
 ]
 
 export function Navbar() {
@@ -76,14 +78,18 @@ export function Navbar() {
           </Link>
         </nav>
 
-        {/* Mobile Menu Button */}
-        <button
-          className="rounded-md p-2 text-white md:hidden"
-          onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-          aria-label="Toggle menu"
-        >
-          {mobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
-        </button>
+        {/* Carrito (siempre visible) + Mobile Menu Button */}
+        <div className="flex items-center gap-1">
+          <CarritoBoton />
+
+          <button
+            className="rounded-md p-2 text-white md:hidden"
+            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+            aria-label="Toggle menu"
+          >
+            {mobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+          </button>
+        </div>
       </div>
 
       {/* Mobile Navigation */}

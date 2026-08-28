@@ -94,3 +94,25 @@ export interface JugadorConEstadisticas {
   mvps: number
   sanciones: number
 }
+
+export interface Producto {
+  id: string
+  nombre: string
+  tipo: string
+  precio: number
+  descripcion: string
+  imagen?: string
+  talles: string[]
+  colores: string[]
+}
+
+export interface ItemCarrito {
+  id: string // productoId + talle + color: clave única de esa combinación
+  productoId: string
+  nombre: string
+  precio: number
+  imagen?: string
+  talle?: string
+  color?: string
+  cantidad: number
+}

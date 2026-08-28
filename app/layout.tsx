@@ -4,6 +4,7 @@ import { Analytics } from '@vercel/analytics/next'
 import { Navbar } from '@/components/layout/navbar'
 import { Footer } from '@/components/layout/footer'
 import { AutoRefresh } from '@/components/shared/auto-refresh'
+import { CartProvider } from '@/components/tienda/cart-context'
 import './globals.css'
 
 const _geist = Geist({ subsets: ['latin'] })
@@ -38,11 +39,13 @@ export default function RootLayout({
     <html lang="es" className="bg-background">
       <body className="font-sans antialiased min-h-screen flex flex-col">
         <AutoRefresh />
-        <Navbar />
-        <main className="flex-1">
-          {children}
-        </main>
-        <Footer />
+        <CartProvider>
+          <Navbar />
+          <main className="flex-1">
+            {children}
+          </main>
+          <Footer />
+        </CartProvider>
         {process.env.NODE_ENV === 'production' && <Analytics />}
       </body>
     </html>

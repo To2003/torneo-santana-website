@@ -1,5 +1,5 @@
 import Papa from 'papaparse'
-import type { Equipo, Partido, ConfiguracionTorneo, HabilitacionTorneos, Posicion, InstagramPost, Sancion, JugadorBuenaFe, JugadorConEstadisticas } from './types'
+import type { Equipo, Partido, ConfiguracionTorneo, HabilitacionTorneos, Posicion, InstagramPost, Sancion, JugadorBuenaFe, JugadorConEstadisticas, Producto } from './types'
 import { equiposMock, partidosMock, configuracionMock } from './mock-data'
 
 // Usamos tu ID de planilla. Asegurate de que esté Pública (Cualquier usuario con el vínculo -> Lector)
@@ -570,4 +570,42 @@ export async function getSanciones(): Promise<Sancion[]> {
 
   // Más reciente primero: la última fila cargada en el sheet va arriba
   return sanciones.reverse()
+}
+
+// Convierte "$55.000" -> 55000
+function parsePrecio(valor: string): number {
+  const limpio = (valor || '').replace(/[^\d]/g, '')
+  const n = parseInt(limpio, 10)
+  return Number.isFinite(n) ? n : 0
+}
+
+// Convierte "S, M, L Y XLL" -> ["S","M","L","XLL"]. "-" o vacío -> []
+function parseOpciones(valor: string): string[] {
+  const limpio = limpiarTexto(valor || '')
+  if (!limpio || limpio === '-') return []
+
+  return limpio
+    .split(/,|\s+y\s+/i)
+    .map(v => v.trim())
+    .filter(v => v !== '' && v !== '-')
+}
+
+// Lee la hoja "Tienda". Columnas: A) Nombre Producto | B) Tipo Producto
+// | C) Precio | D) Descripcion Producto | E) Imagen | F) Talles | G) Colores
+export async function getProductos(): Promise<Producto[]> {
+  const data = await getSheetData('Tienda')
+  if (!data || data.length < 2) return []
+
+  return data.slice(1)
+    .filter(row => row[0] && row[0].trim() !== '')
+    .map((row, index) => ({
+      id: String(index + 1),
+      nombre: limpiarTexto(row[0]),
+      tipo: limpiarTexto(row[1] || ''),
+      precio: parsePrecio(row[2]),
+      descripcion: limpiarTexto(row[3] || ''),
+      imagen: row[4] && row[4].trim() !== '' ? normalizarUrlImagen(row[4]) : undefined,
+      talles: parseOpciones(row[5]),
+      colores: parseOpciones(row[6])
+    }))
 }
