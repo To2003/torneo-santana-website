@@ -609,3 +609,19 @@ export async function getProductos(): Promise<Producto[]> {
       colores: parseOpciones(row[6])
     }))
 }
+
+// Lee la columna H ("Status Shop") de la hoja "Tienda": un único on/off
+// global para toda la tienda (puede estar en cualquier fila, tomamos el
+// primer valor no vacío que encontremos). Si no hay ningún valor cargado
+// todavía, la tienda queda abierta por defecto
+export async function getEstadoTienda(): Promise<boolean> {
+  const data = await getSheetData('Tienda')
+  if (!data || data.length < 2) return true
+
+  for (const row of data.slice(1)) {
+    const valor = row[7]
+    if (valor && valor.trim() !== '') return parseCheckbox(valor)
+  }
+
+  return true
+}
