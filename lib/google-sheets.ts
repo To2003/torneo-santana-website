@@ -408,9 +408,26 @@ export async function getTablaPosicionesPorGrupo(grupo: '1' | '2'): Promise<Posi
   return calcularTabla(equiposDelGrupo, partidos, sanciones)
 }
 
+// Copa de Oro = los 4 mejores de cada zona (según la tabla regular), cruzados
+// entre zonas. Copa de Plata = todos los demás. Se recalcula solo, no depende
+// de ningún checkbox manual en el Sheet.
+async function getEquiposCopaDeOro(): Promise<Set<string>> {
+  const [posicionesZona1, posicionesZona2] = await Promise.all([
+    getTablaPosicionesPorGrupo('1'),
+    getTablaPosicionesPorGrupo('2')
+  ])
+
+  const top4Zona1 = posicionesZona1.slice(0, 4).map(p => p.equipo.id)
+  const top4Zona2 = posicionesZona2.slice(0, 4).map(p => p.equipo.id)
+
+  return new Set([...top4Zona1, ...top4Zona2])
+}
+
 // Tabla de posiciones filtrada a los equipos de un torneo/instancia específica.
-// Copa de ORO: tildados en la columna E. Copa de PLATA: los que no lo están.
-// Playoff: por ahora solo entran los tildados en la columna F.
+// Copa de ORO/PLATA: automático, ver getEquiposCopaDeOro. Los puntos de esa
+// tabla arrancan de los partidos que esos equipos ya se sacaron entre sí (no
+// arranca de cero, y no cuenta partidos contra equipos que no clasificaron).
+// Playoff: por ahora sigue siendo manual, los tildados en la columna F.
 export async function getTablaPosicionesPorTorneo(torneo: 'copaDeOro' | 'copaDePlata' | 'playoff'): Promise<Posicion[]> {
   const [equipos, partidos, sanciones] = await Promise.all([
     getEquipos(),
@@ -418,13 +435,24 @@ export async function getTablaPosicionesPorTorneo(torneo: 'copaDeOro' | 'copaDeP
     getSanciones()
   ])
 
-  const equiposClasificados = equipos.filter(e => {
-    if (torneo === 'copaDeOro') return e.copaDeOro
-    if (torneo === 'copaDePlata') return !e.copaDeOro
-    return e.playoff
-  })
+  if (torneo === 'playoff') {
+    const equiposClasificados = equipos.filter(e => e.playoff)
+    return calcularTabla(equiposClasificados, partidos, sanciones)
+  }
 
-  return calcularTabla(equiposClasificados, partidos, sanciones)
+  const equiposCopaDeOro = await getEquiposCopaDeOro()
+  const equiposClasificados = equipos.filter(e =>
+    torneo === 'copaDeOro' ? equiposCopaDeOro.has(e.id) : !equiposCopaDeOro.has(e.id)
+  )
+
+  // Solo cuentan los partidos jugados ENTRE equipos que clasificaron a esta
+  // misma instancia (ambos lados del partido deben estar en el grupo)
+  const idsClasificados = new Set(equiposClasificados.map(e => e.id))
+  const partidosDelGrupo = partidos.filter(p =>
+    idsClasificados.has(p.equipoLocal) && idsClasificados.has(p.equipoVisitante)
+  )
+
+  return calcularTabla(equiposClasificados, partidosDelGrupo, sanciones)
 }
 
 export async function getEquipoBySlug(slug: string): Promise<Equipo | null> {
