@@ -9,7 +9,6 @@ export interface Equipo {
   instagram?: string
   whatsapp?: string
   grupo: '1' | '2'
-  copaDeOro: boolean
   playoff: boolean
   logo?: string
 }

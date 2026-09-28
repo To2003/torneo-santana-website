@@ -131,9 +131,9 @@ export async function getEquipos(): Promise<Equipo[]> {
       // Columna D: escudo del equipo (link de Drive u otra URL de imagen)
       const logo = row[3] && row[3].trim() !== '' ? normalizarUrlImagen(row[3]) : undefined
 
-      // Columna E: clasificado a Copa de Oro/Plata | Columna F: clasificado a Playoff
-      const copaDeOro = parseCheckbox(row[4])
-      const playoff = parseCheckbox(row[5])
+      // Columna E: clasificado a Playoff (Copa de Oro/Plata ahora se calcula
+      // solo, ver getEquiposCopaDeOro, ya no depende de ninguna columna)
+      const playoff = parseCheckbox(row[4])
 
       return {
         id: String(index + 1),
@@ -143,7 +143,6 @@ export async function getEquipos(): Promise<Equipo[]> {
         jugadores: jugadores,
         grupo,
         logo,
-        copaDeOro,
         playoff,
       }
     })
@@ -153,7 +152,7 @@ export async function getConfiguracion(): Promise<ConfiguracionTorneo> {
   return configuracionMock // Mantenemos el mock para la config por ahora
 }
 
-// Lee las columnas F/G de la hoja "Equipos", donde se habilita/deshabilita
+// Lee las columnas E/F de la hoja "Equipos", donde se habilita/deshabilita
 // la visibilidad pública de cada torneo (Copa de Oro/Plata y Playoff)
 export async function getHabilitacionTorneos(): Promise<HabilitacionTorneos> {
   const data = await getSheetData('Equipos')
@@ -162,10 +161,10 @@ export async function getHabilitacionTorneos(): Promise<HabilitacionTorneos> {
   if (!data || data.length < 2) return habilitacion
 
   data.slice(1).forEach(row => {
-    const etiqueta = (row[6] || '').trim().toUpperCase()
+    const etiqueta = (row[5] || '').trim().toUpperCase()
     if (!etiqueta) return
 
-    const habilitado = parseCheckbox(row[7])
+    const habilitado = parseCheckbox(row[6])
     if (etiqueta.includes('PLAYOFF')) habilitacion.playoff = habilitado
     else if (etiqueta.includes('COPA')) habilitacion.copaDeOro = habilitado
   })
