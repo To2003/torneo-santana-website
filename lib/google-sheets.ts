@@ -21,9 +21,8 @@ async function getSheetData(sheetName: string): Promise<string[][] | null> {
 
     // Si el spreadsheet entero no es accesible, Google devuelve HTML en vez de CSV.
     // OJO: si el nombre de la PESTAÑA no existe, Google NO tira error acá -
-    // devuelve silenciosamente el contenido de la primera pestaña del archivo.
-    // Por eso funciones como getPartidosFecha validan además que el contenido
-    // recibido tenga la forma esperada (ver esHojaDeFechaValida)
+    // devuelve silenciosamente el contenido de la primera pestaña del archivo
+    // (por eso mapearColumnasPartidos valida que el formato sea el esperado)
     if (text.includes('<html')) return null
 
     // Parseamos el CSV
@@ -54,7 +53,7 @@ function parseNumero(valor?: string): number {
 // Quita caracteres invisibles que suelen colarse al pegar texto en Sheets
 // (word joiner, zero-width space, BOM, etc.) y espacios de sobra
 function limpiarTexto(valor: string): string {
-  return valor.replace(/[\u200B-\u200D\uFEFF\u2060]/g, '').trim()
+  return valor.replace(/[​-‍﻿⁠]/g, '').trim()
 }
 
 // Normaliza un nombre de equipo para comparar sin importar mayúsculas,
@@ -62,7 +61,7 @@ function limpiarTexto(valor: string): string {
 function normalizarNombre(valor: string): string {
   return limpiarTexto(valor)
     .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[̀-ͯ]/g, '')
     .toLowerCase()
     .replace(/[^a-z0-9]/g, '')
 }
@@ -72,7 +71,7 @@ function normalizarNombre(valor: string): string {
 function generarSlug(valor: string): string {
   return limpiarTexto(valor)
     .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[̀-ͯ]/g, '')
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/^-+|-+$/g, '')
@@ -100,46 +99,70 @@ function normalizarUrlImagen(valor: string, ancho = 800): string {
   return url
 }
 
+// --- Lectura de columnas por nombre de encabezado ---------------------------
+// En vez de leer cada hoja por posición fija (row[4], row[5]...), buscamos la
+// columna por el TEXTO de su encabezado. Así, si alguien agrega, saca o
+// reordena una columna en el Sheet, el sitio la sigue encontrando sola en vez
+// de leer el dato de al lado y romperse en silencio (nos pasó varias veces).
+
+// Busca el índice de una columna por su encabezado (tolerante a mayúsculas,
+// acentos y espacios). Devuelve -1 si no la encuentra.
+function indiceColumna(encabezados: string[], nombreColumna: string): number {
+  const objetivo = normalizarNombre(nombreColumna)
+  return encabezados.findIndex(h => normalizarNombre(h || '') === objetivo)
+}
+
+// Arma un "lector" para una fila: col(row, 'Nombre de Columna') devuelve el
+// valor de esa columna en esa fila, buscándola por el encabezado.
+function lectorDeFilas(encabezados: string[]) {
+  return (row: string[], nombreColumna: string): string => {
+    const idx = indiceColumna(encabezados, nombreColumna)
+    return idx >= 0 ? (row[idx] || '') : ''
+  }
+}
+
 export async function getEquipos(): Promise<Equipo[]> {
   const data = await getSheetData('Equipos')
 
   if (!data || data.length < 2) return equiposMock
 
-  // Saltar la fila 1 (encabezados)
+  const encabezados = data[0]
+  const col = lectorDeFilas(encabezados)
   const rows = data.slice(1)
 
-  // Colores por defecto por si el equipo no especifica uno en la Columna D
+  // Colores por defecto por si el equipo no especifica uno en la hoja
   const coloresFallback = ['#1a5f7a', '#e63946', '#2a9d8f', '#f4a261', '#e76f51', '#264653']
 
   return rows
-    .filter(row => row[0] && normalizarNombre(row[0]) !== 'libre') // Ignorar filas vacías
+    .filter(row => col(row, 'Nombre del Equipo') && normalizarNombre(col(row, 'Nombre del Equipo')) !== 'libre')
     .map((row, index) => {
-      // Extraemos las nuevas columnas (si están vacías, usamos valores por defecto)
-      const nombre = limpiarTexto(row[0])
+      const nombre = limpiarTexto(col(row, 'Nombre del Equipo'))
 
       // El plantel de jugadores ahora vive en la hoja "Lista Buena Fe"
       // (ver getJugadoresBuenaFe / getPlantelConEstadisticas)
       const jugadores: string[] = []
 
       // Usamos el color de la hoja si existe, sino usamos el fallback
-      const colorPrimario = row[2] && row[2].trim() !== "" ? row[2].trim() : coloresFallback[index % coloresFallback.length]
+      const colorRaw = col(row, 'Color del Equipo').trim()
+      const colorPrimario = colorRaw !== '' ? colorRaw : coloresFallback[index % coloresFallback.length]
 
-      // Columna B: zona de la temporada regular (Zona 1 / Zona 2)
-      const grupoRaw = (row[1] || '').trim()
+      // Zona de la temporada regular (Zona 1 / Zona 2)
+      const grupoRaw = col(row, 'ZONA').trim()
       const grupo: '1' | '2' = grupoRaw === '2' ? '2' : '1'
 
-      // Columna D: escudo del equipo (link de Drive u otra URL de imagen)
-      const logo = row[3] && row[3].trim() !== '' ? normalizarUrlImagen(row[3]) : undefined
+      // Escudo del equipo (link de Drive u otra URL de imagen)
+      const logoRaw = col(row, 'Link Escudo').trim()
+      const logo = logoRaw !== '' ? normalizarUrlImagen(logoRaw) : undefined
 
-      // Columna E: clasificado a Playoff (Copa de Oro/Plata ahora se calcula
-      // solo, ver getEquiposCopaDeOro, ya no depende de ninguna columna)
-      const playoff = parseCheckbox(row[4])
+      // Clasificado a Playoff (Copa de Oro/Plata se calcula sola,
+      // ver getEquiposCopaDeOro, ya no depende de ninguna columna)
+      const playoff = parseCheckbox(col(row, 'PLAYOFF'))
 
       return {
         id: String(index + 1),
         nombre: nombre,
         slug: generarSlug(nombre),
-        colorPrimario: colorPrimario, // Ahora usa el color del Sheets!
+        colorPrimario: colorPrimario,
         jugadores: jugadores,
         grupo,
         logo,
@@ -152,19 +175,25 @@ export async function getConfiguracion(): Promise<ConfiguracionTorneo> {
   return configuracionMock // Mantenemos el mock para la config por ahora
 }
 
-// Lee las columnas E/F de la hoja "Equipos", donde se habilita/deshabilita
-// la visibilidad pública de cada torneo (Copa de Oro/Plata y Playoff)
+// Lee la hoja "Equipos", donde se habilita/deshabilita la visibilidad pública
+// de cada torneo (Copa de Oro/Plata y Playoff). El checkbox on/off vive en la
+// columna inmediatamente a la derecha de "Habilitar Torneos" (esa columna no
+// tiene su propio encabezado, así que la ubicamos en relación a la de al lado)
 export async function getHabilitacionTorneos(): Promise<HabilitacionTorneos> {
   const data = await getSheetData('Equipos')
 
   const habilitacion: HabilitacionTorneos = { copaDeOro: false, playoff: false }
   if (!data || data.length < 2) return habilitacion
 
+  const idxLabel = indiceColumna(data[0], 'Habilitar Torneos')
+  if (idxLabel < 0) return habilitacion
+  const idxCheckbox = idxLabel + 1
+
   data.slice(1).forEach(row => {
-    const etiqueta = (row[5] || '').trim().toUpperCase()
+    const etiqueta = (row[idxLabel] || '').trim().toUpperCase()
     if (!etiqueta) return
 
-    const habilitado = parseCheckbox(row[6])
+    const habilitado = parseCheckbox(row[idxCheckbox])
     if (etiqueta.includes('PLAYOFF')) habilitacion.playoff = habilitado
     else if (etiqueta.includes('COPA')) habilitacion.copaDeOro = habilitado
   })
@@ -172,90 +201,95 @@ export async function getHabilitacionTorneos(): Promise<HabilitacionTorneos> {
   return habilitacion
 }
 
-// Verifica que los datos correspondan realmente a una hoja de fecha (empieza
-// con "Horario"). Protege contra pestañas cuyo nombre visible es "Fecha N"
-// pero tiene un carácter invisible pegado, lo que hace que Google Sheets
-// devuelva por error el contenido de otra hoja (típicamente "Equipos")
-function esHojaDeFechaValida(data: string[][] | null, numeroFecha: number): boolean {
-  const encabezado = (data?.[0]?.[0] || '').trim().toLowerCase()
-  if (encabezado === 'horario') return true
-
-  console.error(`[Fecha ${numeroFecha}] No se pudo leer "Fecha ${numeroFecha}" como hoja de partidos. O la pestaña todavía no existe, o -si ya la creaste- su nombre tiene un carácter invisible: probá renombrarla escribiendo "Fecha ${numeroFecha}" de cero (sin copiar/pegar).`)
-  return false
+interface FilaPartido {
+  fecha: number
+  horario: string
+  local: string
+  resLocal: string
+  resVisitante: string
+  visitante: string
+  mvp: string
+  linkVideo: string
 }
 
-export async function getPartidosFecha(numeroFecha: number, equipos: Equipo[]): Promise<Partido[]> {
-  const data = await getSheetData(`Fecha ${numeroFecha}`)
-  if (!data || data.length < 2 || !esHojaDeFechaValida(data, numeroFecha)) return []
+interface ColumnasPartidos {
+  fecha: number
+  horario: number
+  local: number
+  resLocal: number
+  resVisitante: number
+  visitante: number
+  mvp: number
+  linkVideo: number
+}
 
-  const rows = data.slice(1)
-  const partidos: Partido[] = []
+// Arma el mapa de columnas de la hoja "Partidos". Todo se busca por nombre de
+// encabezado, EXCEPTO los dos resultados ("R"), que van anclados a "Equipo
+// Local"/"Equipo Visitante" (únicos, sí se pueden buscar por nombre) porque
+// el encabezado "R" se repite dos veces y no hay forma de distinguirlos por
+// texto solo.
+function mapearColumnasPartidos(encabezados: string[]): ColumnasPartidos | null {
+  const fecha = indiceColumna(encabezados, 'Fecha')
+  const local = indiceColumna(encabezados, 'Equipo Local')
+  const visitante = indiceColumna(encabezados, 'Equipo Visitante')
+  if (fecha < 0 || local < 0 || visitante < 0) return null
 
-  rows.forEach((row, index) => {
-    // Formato: Horario | Local | Goles L | VS | Goles V | Visitante | MVP (Opcional) | Link Partido (Opcional)
-    if (row.length < 6) return
+  return {
+    fecha,
+    horario: indiceColumna(encabezados, 'Horario'),
+    local,
+    resLocal: local + 1,
+    resVisitante: visitante - 1,
+    visitante,
+    mvp: indiceColumna(encabezados, 'MVP del Partido'),
+    linkVideo: indiceColumna(encabezados, 'Link Partido')
+  }
+}
 
-    const horario = row[0]
-    const nombreLocal = row[1]
-    const resLocal = row[2]
-    const resVisitante = row[4]
-    const nombreVisitante = row[5]
-    const mvpRaw = row[6]
-    const mvp = mvpRaw && mvpRaw.trim() !== "" ? mvpRaw.trim() : undefined
+// Lee la hoja "Partidos": todas las fechas juntas, una fila por partido, con
+// una columna "Fecha" (1, 2, 3...) al principio. Reemplaza a las ~20 pestañas
+// separadas "Fecha 1", "Fecha 2"... que usábamos antes: una sola consulta a
+// Google en vez de una por fecha, y cargar un partido nuevo es solo agregar
+// una fila más abajo en la misma tabla.
+async function getFilasPartidos(): Promise<FilaPartido[]> {
+  const data = await getSheetData('Partidos')
+  if (!data || data.length < 2) return []
 
-    if (!nombreLocal || !nombreVisitante) return
-    const localEsLibre = ['libre', 'queda'].includes(normalizarNombre(nombreLocal))
-    const visitanteEsLibre = ['libre', 'queda'].includes(normalizarNombre(nombreVisitante))
-    if (localEsLibre || visitanteEsLibre) return
+  const columnas = mapearColumnasPartidos(data[0])
+  if (!columnas) {
+    console.error('[Partidos] La hoja "Partidos" no tiene el formato esperado (deben existir las columnas "Fecha", "Equipo Local" y "Equipo Visitante")')
+    return []
+  }
 
-    // Buscar IDs de equipos (comparación tolerante a mayúsculas, acentos y espacios)
-    const local = equipos.find(e => normalizarNombre(e.nombre) === normalizarNombre(nombreLocal))
-    const visitante = equipos.find(e => normalizarNombre(e.nombre) === normalizarNombre(nombreVisitante))
-
-    if (local && visitante) {
-      const jugado = resLocal !== "" && resLocal !== "-" && resVisitante !== "" && resVisitante !== "-"
-
-      partidos.push({
-        id: `${numeroFecha}-${index + 1}`,
-        fecha: numeroFecha,
-        dia: `Fecha ${numeroFecha}`,
-        hora: horario,
-        equipoLocal: local.id,
-        equipoVisitante: visitante.id,
-        cancha: 'Cancha 1',
-        setsLocal: jugado ? parseInt(resLocal) : undefined,
-        setsVisitante: jugado ? parseInt(resVisitante) : undefined,
-        jugado: jugado,
-        mvp: jugado ? mvp : undefined
-      })
-    }
-  })
-
-  return partidos
+  return data.slice(1)
+    .map(row => ({
+      fecha: parseNumero(row[columnas.fecha]),
+      horario: row[columnas.horario] || '',
+      local: row[columnas.local] || '',
+      resLocal: row[columnas.resLocal] || '',
+      resVisitante: row[columnas.resVisitante] || '',
+      visitante: row[columnas.visitante] || '',
+      mvp: columnas.mvp >= 0 ? (row[columnas.mvp] || '') : '',
+      linkVideo: columnas.linkVideo >= 0 ? (row[columnas.linkVideo] || '') : ''
+    }))
+    .filter(f => f.fecha > 0 && f.local.trim() !== '' && f.visitante.trim() !== '')
 }
 
 // Encuentra el equipo que descansa (fila "Queda / LIBRE") en una fecha dada
 export async function getEquipoLibre(numeroFecha: number, equipos: Equipo[]): Promise<Equipo | null> {
-  const data = await getSheetData(`Fecha ${numeroFecha}`)
-  if (!data || data.length < 2 || !esHojaDeFechaValida(data, numeroFecha)) return null
+  const filas = await getFilasPartidos()
 
-  const rows = data.slice(1)
+  for (const fila of filas) {
+    if (fila.fecha !== numeroFecha) continue
 
-  for (const row of rows) {
-    if (row.length < 6) continue
-
-    const nombreLocal = row[1]
-    const nombreVisitante = row[5]
-    if (!nombreLocal || !nombreVisitante) continue
-
-    const localEsLibre = ['libre', 'queda'].includes(normalizarNombre(nombreLocal))
-    const visitanteEsLibre = ['libre', 'queda'].includes(normalizarNombre(nombreVisitante))
+    const localEsLibre = ['libre', 'queda'].includes(normalizarNombre(fila.local))
+    const visitanteEsLibre = ['libre', 'queda'].includes(normalizarNombre(fila.visitante))
 
     if (visitanteEsLibre && !localEsLibre) {
-      return equipos.find(e => normalizarNombre(e.nombre) === normalizarNombre(nombreLocal)) || null
+      return equipos.find(e => normalizarNombre(e.nombre) === normalizarNombre(fila.local)) || null
     }
     if (localEsLibre && !visitanteEsLibre) {
-      return equipos.find(e => normalizarNombre(e.nombre) === normalizarNombre(nombreVisitante)) || null
+      return equipos.find(e => normalizarNombre(e.nombre) === normalizarNombre(fila.visitante)) || null
     }
   }
 
@@ -263,29 +297,46 @@ export async function getEquipoLibre(numeroFecha: number, equipos: Equipo[]): Pr
 }
 
 // Link al video de la fecha completa (una transmisión/grabación por fecha,
-// no por partido). Toma el primer valor no vacío de la columna "Link Partido"
+// no por partido). Toma el primer valor no vacío de "Link Partido" en esa fecha
 export async function getLinkVideoFecha(numeroFecha: number): Promise<string | undefined> {
-  const data = await getSheetData(`Fecha ${numeroFecha}`)
-  if (!data || data.length < 2 || !esHojaDeFechaValida(data, numeroFecha)) return undefined
-
-  for (const row of data.slice(1)) {
-    const link = row[7]
-    if (link && link.trim() !== '') return limpiarTexto(link)
-  }
-
-  return undefined
+  const filas = await getFilasPartidos()
+  const filaConLink = filas.find(f => f.fecha === numeroFecha && f.linkVideo.trim() !== '')
+  return filaConLink ? limpiarTexto(filaConLink.linkVideo) : undefined
 }
 
 export async function getTodosLosPartidos(): Promise<Partido[]> {
-  const equipos = await getEquipos()
-  
-  // Buscar hasta un máximo de 20 fechas EN PARALELO para mejorar el rendimiento
-  // Esto evita hacer llamadas en cascada que bloquean la carga de la página
-  const promesas = Array.from({ length: 20 }, (_, i) => getPartidosFecha(i + 1, equipos))
-  const resultados = await Promise.all(promesas)
-  
-  // Aplanar los resultados y devolver
-  return resultados.flat()
+  const [equipos, filas] = await Promise.all([getEquipos(), getFilasPartidos()])
+  const partidos: Partido[] = []
+
+  filas.forEach((fila, index) => {
+    const localEsLibre = ['libre', 'queda'].includes(normalizarNombre(fila.local))
+    const visitanteEsLibre = ['libre', 'queda'].includes(normalizarNombre(fila.visitante))
+    if (localEsLibre || visitanteEsLibre) return
+
+    // Buscar IDs de equipos (comparación tolerante a mayúsculas, acentos y espacios)
+    const local = equipos.find(e => normalizarNombre(e.nombre) === normalizarNombre(fila.local))
+    const visitante = equipos.find(e => normalizarNombre(e.nombre) === normalizarNombre(fila.visitante))
+    if (!local || !visitante) return
+
+    const jugado = fila.resLocal !== "" && fila.resLocal !== "-" && fila.resVisitante !== "" && fila.resVisitante !== "-"
+    const mvp = fila.mvp.trim() !== '' ? fila.mvp.trim() : undefined
+
+    partidos.push({
+      id: `${fila.fecha}-${index + 1}`,
+      fecha: fila.fecha,
+      dia: `Fecha ${fila.fecha}`,
+      hora: fila.horario,
+      equipoLocal: local.id,
+      equipoVisitante: visitante.id,
+      cancha: 'Cancha 1',
+      setsLocal: jugado ? parseInt(fila.resLocal) : undefined,
+      setsVisitante: jugado ? parseInt(fila.resVisitante) : undefined,
+      jugado: jugado,
+      mvp: jugado ? mvp : undefined
+    })
+  })
+
+  return partidos
 }
 
 export async function getProximosPartidos(limit: number = 6): Promise<Partido[]> {
@@ -426,7 +477,7 @@ async function getEquiposCopaDeOro(): Promise<Set<string>> {
 // Copa de ORO/PLATA: automático, ver getEquiposCopaDeOro. Los puntos de esa
 // tabla arrancan de los partidos que esos equipos ya se sacaron entre sí (no
 // arranca de cero, y no cuenta partidos contra equipos que no clasificaron).
-// Playoff: por ahora sigue siendo manual, los tildados en la columna F.
+// Playoff: por ahora sigue siendo manual, los tildados en la columna "PLAYOFF".
 export async function getTablaPosicionesPorTorneo(torneo: 'copaDeOro' | 'copaDePlata' | 'playoff'): Promise<Posicion[]> {
   const [equipos, partidos, sanciones] = await Promise.all([
     getEquipos(),
@@ -477,9 +528,9 @@ function coincideNombreJugador(textoLibre: string, nombre: string, apodo?: strin
 }
 
 // Lee la hoja "Lista Buena Fe": el padrón de jugadores por equipo.
-// Columnas: A) Nombre Jugador | B) Apodo (opcional) | C) Nombre del Equipo
-// (las columnas MVPs/SANCIONES de esa hoja son solo referencia manual para
-// el organizador; el sitio las calcula solo, no las lee)
+// Columnas: Nombre Jugador | Apodo (opcional) | Numero (no la usamos)
+// | Nombre del Equipo (las columnas MVPs/SANCIONES de esa hoja son solo
+// referencia manual para el organizador; el sitio las calcula solo, no las lee)
 export async function getJugadoresBuenaFe(): Promise<JugadorBuenaFe[]> {
   const [data, equipos] = await Promise.all([
     getSheetData('Lista Buena Fe'),
@@ -487,13 +538,15 @@ export async function getJugadoresBuenaFe(): Promise<JugadorBuenaFe[]> {
   ])
   if (!data || data.length < 2) return []
 
+  const encabezados = data[0]
+  const col = lectorDeFilas(encabezados)
+
   return data.slice(1)
-    .filter(row => row[0] && row[0].trim() !== '')
+    .filter(row => col(row, 'Nombre Jugador').trim() !== '')
     .map((row, index) => {
-      const nombre = limpiarTexto(row[0])
-      const apodoRaw = limpiarTexto(row[1] || '')
-      // Columna C es el número de camiseta (no la usamos); el equipo está en D
-      const equipoNombreRaw = limpiarTexto(row[3] || '')
+      const nombre = limpiarTexto(col(row, 'Nombre Jugador'))
+      const apodoRaw = limpiarTexto(col(row, 'Apodo'))
+      const equipoNombreRaw = limpiarTexto(col(row, 'Nombre del Equipo'))
 
       const equipoMatch = equipos.find(e => normalizarNombre(e.nombre) === normalizarNombre(equipoNombreRaw))
       if (equipoNombreRaw && !equipoMatch) {
@@ -539,28 +592,32 @@ export async function getPlantelConEstadisticas(equipo: Equipo): Promise<Jugador
 }
 
 // Lee la hoja "Instagram" para el carrusel de posteos de la home.
-// Columnas: A) Imagen (link de Drive) | B) Link al posteo/perfil | C) Texto (opcional)
+// Columnas: Imagen (link de Drive) | Link al posteo/perfil | Texto (opcional)
 export async function getInstagramPosts(): Promise<InstagramPost[]> {
   const data = await getSheetData('Instagram')
   if (!data) return []
 
-  // La hoja tiene un título arriba, así que buscamos la fila de encabezados
-  // ("IMAGENES") en vez de asumir que los datos arrancan en la fila 2
-  const indiceEncabezado = data.findIndex(row => (row[1] || '').trim().toUpperCase() === 'IMAGENES')
-  const rows = indiceEncabezado >= 0 ? data.slice(indiceEncabezado + 1) : data.slice(1)
+  // La hoja tiene un título arriba, así que buscamos la fila que tenga el
+  // encabezado "IMAGENES" en vez de asumir que los datos arrancan en la fila 2
+  const indiceEncabezado = data.findIndex(row => indiceColumna(row, 'IMAGENES') >= 0)
+  if (indiceEncabezado < 0) return []
+
+  const encabezados = data[indiceEncabezado]
+  const col = lectorDeFilas(encabezados)
+  const rows = data.slice(indiceEncabezado + 1)
 
   return rows
-    .filter(row => row[1] && row[1].trim() !== '')
+    .filter(row => col(row, 'IMAGENES').trim() !== '')
     .map((row, index) => ({
       id: String(index + 1),
-      imagen: normalizarUrlImagen(row[1]),
-      link: row[2] && row[2].trim() !== '' ? limpiarTexto(row[2]) : 'https://instagram.com',
-      texto: row[3] && row[3].trim() !== '' ? limpiarTexto(row[3]) : undefined,
+      imagen: normalizarUrlImagen(col(row, 'IMAGENES')),
+      link: col(row, 'LINK').trim() !== '' ? limpiarTexto(col(row, 'LINK')) : 'https://instagram.com',
+      texto: col(row, 'TEXTO').trim() !== '' ? limpiarTexto(col(row, 'TEXTO')) : undefined,
     }))
 }
 
-// Lee la hoja "Sanciones". Columnas: A) Equipo | B) Causa Sancion | C) Puntos
-// | D) Jugador (opcional) | E) Fechas Suspencion
+// Lee la hoja "Sanciones". Columnas: Equipo | Causa Sancion | Puntos
+// | Jugador (opcional) | Fechas Suspencion
 // Devuelve la más reciente primero (última fila del sheet primero) e ignora
 // las filas sin ningún efecto real (sin puntos y sin fechas de suspensión)
 export async function getSanciones(): Promise<Sancion[]> {
@@ -571,13 +628,16 @@ export async function getSanciones(): Promise<Sancion[]> {
 
   if (!data || data.length < 2) return []
 
+  const encabezados = data[0]
+  const col = lectorDeFilas(encabezados)
+
   const sanciones = data.slice(1)
     .map((row, index): Sancion | null => {
-      const equipoNombreRaw = limpiarTexto(row[0] || '')
+      const equipoNombreRaw = limpiarTexto(col(row, 'Equipo'))
       if (!equipoNombreRaw) return null
 
-      const puntos = parseNumero(row[2])
-      const fechasSuspension = parseNumero(row[4])
+      const puntos = parseNumero(col(row, 'Puntos'))
+      const fechasSuspension = parseNumero(col(row, 'Fechas Suspencion'))
 
       // Sin puntos ni fechas de suspensión no tiene ningún efecto: se ignora
       if (puntos === 0 && fechasSuspension === 0) return null
@@ -587,13 +647,13 @@ export async function getSanciones(): Promise<Sancion[]> {
         console.error(`[Sanciones] No se encontró un equipo que matchee "${equipoNombreRaw}" (fila ${index + 2} de la hoja Sanciones)`)
       }
 
-      const jugadorRaw = limpiarTexto(row[3] || '')
+      const jugadorRaw = limpiarTexto(col(row, 'Jugador'))
 
       return {
         id: String(index + 1),
         equipoNombre: equipoMatch ? equipoMatch.nombre : equipoNombreRaw,
         equipoId: equipoMatch?.id,
-        causa: limpiarTexto(row[1] || ''),
+        causa: limpiarTexto(col(row, 'Causa Sancion')),
         puntos,
         jugador: jugadorRaw !== '' ? jugadorRaw : undefined,
         fechasSuspension
@@ -623,36 +683,42 @@ function parseOpciones(valor: string): string[] {
     .filter(v => v !== '' && v !== '-')
 }
 
-// Lee la hoja "Tienda". Columnas: A) Nombre Producto | B) Tipo Producto
-// | C) Precio | D) Descripcion Producto | E) Imagen | F) Talles | G) Colores
+// Lee la hoja "Tienda". Columnas: Nombre Producto | Tipo Producto | Precio
+// | Descripcion Producto | Imagen | Talles | Colores
 export async function getProductos(): Promise<Producto[]> {
   const data = await getSheetData('Tienda')
   if (!data || data.length < 2) return []
 
+  const encabezados = data[0]
+  const col = lectorDeFilas(encabezados)
+
   return data.slice(1)
-    .filter(row => row[0] && row[0].trim() !== '')
+    .filter(row => col(row, 'Nombre Producto').trim() !== '')
     .map((row, index) => ({
       id: String(index + 1),
-      nombre: limpiarTexto(row[0]),
-      tipo: limpiarTexto(row[1] || ''),
-      precio: parsePrecio(row[2]),
-      descripcion: limpiarTexto(row[3] || ''),
-      imagen: row[4] && row[4].trim() !== '' ? normalizarUrlImagen(row[4]) : undefined,
-      talles: parseOpciones(row[5]),
-      colores: parseOpciones(row[6])
+      nombre: limpiarTexto(col(row, 'Nombre Producto')),
+      tipo: limpiarTexto(col(row, 'Tipo Producto')),
+      precio: parsePrecio(col(row, 'Precio')),
+      descripcion: limpiarTexto(col(row, 'Descripcion Producto')),
+      imagen: col(row, 'Imagen').trim() !== '' ? normalizarUrlImagen(col(row, 'Imagen')) : undefined,
+      talles: parseOpciones(col(row, 'Talles')),
+      colores: parseOpciones(col(row, 'Colores'))
     }))
 }
 
-// Lee la columna H ("Status Shop") de la hoja "Tienda": un único on/off
-// global para toda la tienda (puede estar en cualquier fila, tomamos el
-// primer valor no vacío que encontremos). Si no hay ningún valor cargado
-// todavía, la tienda queda abierta por defecto
+// Lee la columna "Status Shop" de la hoja "Tienda": un único on/off global
+// para toda la tienda (puede estar en cualquier fila, tomamos el primer valor
+// no vacío que encontremos). Si no hay ningún valor cargado todavía, la
+// tienda queda abierta por defecto
 export async function getEstadoTienda(): Promise<boolean> {
   const data = await getSheetData('Tienda')
   if (!data || data.length < 2) return true
 
+  const idxEstado = indiceColumna(data[0], 'Status Shop')
+  if (idxEstado < 0) return true
+
   for (const row of data.slice(1)) {
-    const valor = row[7]
+    const valor = row[idxEstado]
     if (valor && valor.trim() !== '') return parseCheckbox(valor)
   }
 
