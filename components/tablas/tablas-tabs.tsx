@@ -68,8 +68,8 @@ export function TablasTabs({ zona1, zona2, copaDeOro, copaDePlata, playoff, habi
         {activa === 'copa' && (
           habilitacion.copaDeOro ? (
             <div className="space-y-6">
-              <TablaSimple titulo="Copa de Oro" posiciones={copaDeOro} />
-              <TablaSimple titulo="Copa de Plata" posiciones={copaDePlata} />
+              <TablaSimple titulo="Copa de Oro" posiciones={copaDeOro} variante="oro" />
+              <TablaSimple titulo="Copa de Plata" posiciones={copaDePlata} variante="plata" />
             </div>
           ) : (
             <ProximamenteCard titulo="Copa de Oro/Plata" />

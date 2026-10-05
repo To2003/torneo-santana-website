@@ -1,10 +1,11 @@
-import { TablaSimple } from '@/components/shared/tabla-simple'
+import { TablaSimple, type VarianteTabla } from '@/components/shared/tabla-simple'
 import type { Posicion } from '@/lib/types'
 
 export interface TablaTorneo {
   titulo: string
   posiciones: Posicion[]
   corte?: { posicion: number; etiqueta: string }
+  variante?: VarianteTabla
 }
 
 interface TablaPosicionesProps {
@@ -25,7 +26,7 @@ export function TablaPosiciones({ titulo, tablas, className }: TablaPosicionesPr
       </h2>
       <div className="space-y-6">
         {tablas.map((tabla) => (
-          <TablaSimple key={tabla.titulo} titulo={tabla.titulo} posiciones={tabla.posiciones} corte={tabla.corte} />
+          <TablaSimple key={tabla.titulo} titulo={tabla.titulo} posiciones={tabla.posiciones} corte={tabla.corte} variante={tabla.variante} />
         ))}
       </div>
     </div>
