@@ -11,13 +11,13 @@ const navItems = [
   { href: '/', label: 'Inicio' },
   { href: '/equipos', label: 'Equipos' },
   { href: '/fixture', label: 'Fixture' },
-  { href: '/tienda', label: 'Tienda' }
+  { href: '/tienda', label: 'Tienda' },
+  { href: '/tablas', label: 'Tablas' }
 ]
 
 export function Navbar() {
   const pathname = usePathname()
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
-  const playoffsActivo = pathname === '/playoffs' || pathname.startsWith('/playoffs')
 
   return (
     <header className="sticky top-0 z-50 w-full bg-gradient-to-b from-[#1a3a5c] to-[#0d2340] shadow-lg">
@@ -66,16 +66,6 @@ export function Navbar() {
               </Link>
             )
           })}
-
-          <Link
-            href="/playoffs"
-            className={cn(
-              'rounded-md px-4 py-2 text-sm font-bold uppercase tracking-wider transition-all hover:scale-105 ml-1',
-              playoffsActivo ? 'text-amber-300' : 'text-amber-400 hover:text-amber-300'
-            )}
-          >
-            Playoffs ⚡
-          </Link>
         </nav>
 
         {/* Carrito (siempre visible) + Mobile Menu Button */}
@@ -116,17 +106,6 @@ export function Navbar() {
                 </Link>
               )
             })}
-
-            <Link
-              href="/playoffs"
-              onClick={() => setMobileMenuOpen(false)}
-              className={cn(
-                'flex w-full rounded-md px-4 py-3 text-sm font-bold uppercase tracking-wider hover:bg-white/5 transition-colors text-left',
-                playoffsActivo ? 'text-amber-300 bg-white/5' : 'text-amber-400'
-              )}
-            >
-              Playoffs ⚡
-            </Link>
           </div>
         </nav>
       )}

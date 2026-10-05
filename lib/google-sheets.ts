@@ -448,6 +448,11 @@ function calcularTabla(equipos: Equipo[], partidos: Partido[], sanciones: Sancio
 }
 
 // Tabla de posiciones de la temporada regular, filtrada por zona (Zona 1 / Zona 2)
+// Última fecha de la temporada regular (zonas). Las fechas posteriores son de
+// Copa de Oro/Plata y no deben mover la tabla de zona: si lo hicieran, los
+// clasificados a Copa cambiarían cada semana.
+const ULTIMA_FECHA_REGULAR = 7
+
 export async function getTablaPosicionesPorGrupo(grupo: '1' | '2'): Promise<Posicion[]> {
   const [equipos, partidos, sanciones] = await Promise.all([
     getEquipos(),
@@ -455,7 +460,8 @@ export async function getTablaPosicionesPorGrupo(grupo: '1' | '2'): Promise<Posi
     getSanciones()
   ])
   const equiposDelGrupo = equipos.filter(e => e.grupo === grupo)
-  return calcularTabla(equiposDelGrupo, partidos, sanciones)
+  const partidosRegulares = partidos.filter(p => p.fecha <= ULTIMA_FECHA_REGULAR)
+  return calcularTabla(equiposDelGrupo, partidosRegulares, sanciones)
 }
 
 // Copa de Oro = los 4 mejores de cada zona (según la tabla regular), cruzados

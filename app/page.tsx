@@ -1,5 +1,5 @@
 import { Hero } from '@/components/home/hero'
-import { TablaPosiciones } from '@/components/home/tabla-posiciones'
+import { TablaPosiciones, type TablaTorneo } from '@/components/home/tabla-posiciones'
 import { UltimosMVPs } from '@/components/home/ultimos-mvps'
 import { SancionesCard } from '@/components/home/sanciones-card'
 import { InfoTorneo } from '@/components/home/info-torneo'
@@ -7,6 +7,8 @@ import { InstagramCarousel } from '@/components/home/instagram-carousel'
 import {
   getConfiguracion,
   getTablaPosicionesPorGrupo,
+  getTablaPosicionesPorTorneo,
+  getHabilitacionTorneos,
   getUltimosMVPs,
   getEquipos,
   getInstagramPosts,
@@ -31,15 +33,26 @@ const configRespaldo = {
 }
 
 export default async function HomePage() {
-  const [configSheet, posicionesTorneoA, posicionesTorneoB, ultimosMVPs, equipos, instagramPosts, sanciones] = await Promise.all([
+  const [configSheet, posicionesZona1, posicionesZona2, copaDeOro, copaDePlata, playoff, habilitacion, ultimosMVPs, equipos, instagramPosts, sanciones] = await Promise.all([
     getConfiguracion(),
     getTablaPosicionesPorGrupo('1'),
     getTablaPosicionesPorGrupo('2'),
+    getTablaPosicionesPorTorneo('copaDeOro'),
+    getTablaPosicionesPorTorneo('copaDePlata'),
+    getTablaPosicionesPorTorneo('playoff'),
+    getHabilitacionTorneos(),
     getUltimosMVPs(),
     getEquipos(),
     getInstagramPosts(),
     getSanciones()
   ])
+
+  // Torneo que se juega actualmente: el último que esté habilitado
+  const tablasActuales: { titulo: string; tablas: TablaTorneo[] } = habilitacion.playoff
+    ? { titulo: 'Playoff', tablas: [{ titulo: 'Playoff', posiciones: playoff }] }
+    : habilitacion.copaDeOro
+      ? { titulo: 'Copa de Oro / Plata', tablas: [{ titulo: 'Copa de Oro', posiciones: copaDeOro }, { titulo: 'Copa de Plata', posiciones: copaDePlata }] }
+      : { titulo: 'Zonas', tablas: [{ titulo: 'Zona 1', posiciones: posicionesZona1 }, { titulo: 'Zona 2', posiciones: posicionesZona2 }] }
 
   // LÓGICA DE SEGURIDAD: Si el Sheets viene vacío o sin reglas, inyectamos el respaldo oficial
   const config = {
@@ -66,10 +79,7 @@ export default async function HomePage() {
           <div className="grid gap-6 lg:grid-cols-3">
             {/* Tabla de Posiciones - 2 columnas en desktop */}
             <div className="min-w-0 lg:col-span-2">
-              <TablaPosiciones
-                torneoA={posicionesTorneoA}
-                torneoB={posicionesTorneoB}
-              />
+              <TablaPosiciones titulo={tablasActuales.titulo} tablas={tablasActuales.tablas} />
             </div>
 
             {/* Sidebar - Ultimos MVPs y Sanciones */}
