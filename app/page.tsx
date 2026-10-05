@@ -52,7 +52,7 @@ export default async function HomePage() {
     ? { titulo: 'Disputando actualmente', tablas: [{ titulo: 'Playoff', posiciones: playoff }] }
     : habilitacion.copaDeOro
       ? { titulo: 'Disputando actualmente', tablas: [{ titulo: 'Copa de Oro', posiciones: copaDeOro }, { titulo: 'Copa de Plata', posiciones: copaDePlata }] }
-      : { titulo: 'Disputando actualmente', tablas: [{ titulo: 'Zona 1', posiciones: posicionesZona1 }, { titulo: 'Zona 2', posiciones: posicionesZona2 }] }
+      : { titulo: 'Disputando actualmente', tablas: [{ titulo: 'Zona 1', posiciones: posicionesZona1, corte: { posicion: 4, etiqueta: 'Los 4 primeros de cada zona pasan a Copa de Oro' } }, { titulo: 'Zona 2', posiciones: posicionesZona2, corte: { posicion: 4, etiqueta: 'Los 4 primeros de cada zona pasan a Copa de Oro' } }] }
 
   // LÓGICA DE SEGURIDAD: Si el Sheets viene vacío o sin reglas, inyectamos el respaldo oficial
   const config = {
