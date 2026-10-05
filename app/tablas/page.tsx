@@ -1,5 +1,4 @@
-import { TablaSimple } from '@/components/shared/tabla-simple'
-import { TablaPlayoffs } from '@/components/playoffs/tabla-playoffs'
+import { TablasTabs } from '@/components/tablas/tablas-tabs'
 import {
   getTablaPosicionesPorGrupo,
   getTablaPosicionesPorTorneo,
@@ -33,22 +32,15 @@ export default async function TablasPage() {
       </section>
 
       <section className="bg-court py-12">
-        <div className="relative mx-auto max-w-5xl space-y-10 px-4">
-          <div className="space-y-4">
-            <h2 className="text-center text-xl font-black uppercase tracking-wide text-[#1f4e78]">Zonas</h2>
-            <TablaSimple titulo="Zona 1" posiciones={zona1} />
-            <TablaSimple titulo="Zona 2" posiciones={zona2} />
-          </div>
-
-          <div className="space-y-4">
-            <h2 className="text-center text-xl font-black uppercase tracking-wide text-[#1f4e78]">Copa y Playoff</h2>
-            <TablaPlayoffs
-              copaDeOro={copaDeOro}
-              copaDePlata={copaDePlata}
-              playoff={playoff}
-              habilitacion={habilitacion}
-            />
-          </div>
+        <div className="relative mx-auto max-w-5xl px-4">
+          <TablasTabs
+            zona1={zona1}
+            zona2={zona2}
+            copaDeOro={copaDeOro}
+            copaDePlata={copaDePlata}
+            playoff={playoff}
+            habilitacion={habilitacion}
+          />
         </div>
       </section>
     </div>

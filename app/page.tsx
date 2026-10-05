@@ -49,10 +49,10 @@ export default async function HomePage() {
 
   // Torneo que se juega actualmente: el último que esté habilitado
   const tablasActuales: { titulo: string; tablas: TablaTorneo[] } = habilitacion.playoff
-    ? { titulo: 'Playoff', tablas: [{ titulo: 'Playoff', posiciones: playoff }] }
+    ? { titulo: 'Disputando actualmente', tablas: [{ titulo: 'Playoff', posiciones: playoff }] }
     : habilitacion.copaDeOro
-      ? { titulo: 'Copa de Oro / Plata', tablas: [{ titulo: 'Copa de Oro', posiciones: copaDeOro }, { titulo: 'Copa de Plata', posiciones: copaDePlata }] }
-      : { titulo: 'Zonas', tablas: [{ titulo: 'Zona 1', posiciones: posicionesZona1 }, { titulo: 'Zona 2', posiciones: posicionesZona2 }] }
+      ? { titulo: 'Disputando actualmente', tablas: [{ titulo: 'Copa de Oro', posiciones: copaDeOro }, { titulo: 'Copa de Plata', posiciones: copaDePlata }] }
+      : { titulo: 'Disputando actualmente', tablas: [{ titulo: 'Zona 1', posiciones: posicionesZona1 }, { titulo: 'Zona 2', posiciones: posicionesZona2 }] }
 
   // LÓGICA DE SEGURIDAD: Si el Sheets viene vacío o sin reglas, inyectamos el respaldo oficial
   const config = {
